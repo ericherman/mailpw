@@ -1,3 +1,5 @@
 pwcrypt
+test-crypt-algo
+test-is-valid-for-salt
 *.o
 *~
