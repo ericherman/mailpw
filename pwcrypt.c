@@ -45,16 +45,16 @@
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
 void getpass(char *buf, char *buf2, size_t len, int confirm);
-void getrandom_alphanumeric(char *buf, size_t len);
+void getrandom_salt(char *buf, size_t len);
 char *fgetpass(char *buf, size_t len, FILE *stream);
-int is_english_alphanumeric(char c);
+int is_valid_for_salt(char c);
 
 /* functions */
 int main(void)
 {
 	const size_t plain_salt_size = Max_salt_len + 1;
 	char plain_salt[plain_salt_size];
-	getrandom_alphanumeric(plain_salt, plain_salt_size);
+	getrandom_salt(plain_salt, plain_salt_size);
 
 	const char *algo = CRYPT_SHA512;
 	const size_t algo_salt_size = plain_salt_size + 10;
@@ -150,7 +150,7 @@ void getpass(char *buf, char *buf2, size_t size, int confirm)
 	} while (diff);
 }
 
-void getrandom_alphanumeric(char *buf, size_t len)
+void getrandom_salt(char *buf, size_t len)
 {
 	assert(buf);
 	assert(len);
@@ -164,7 +164,7 @@ void getrandom_alphanumeric(char *buf, size_t len)
 
 		for (ssize_t i = 0; i < got && pos < max; ++i) {
 			char c = rnd_buf[i];
-			if (is_english_alphanumeric(c)) {
+			if (is_valid_for_salt(c)) {
 				buf[pos++] = c;
 			}
 		}
@@ -187,17 +187,26 @@ char *chomp_crlf(char *str, size_t max)
 	return str;
 }
 
-/* the standard C libarary "isalnum" results may depend upon the locale */
-/* https://www.cplusplus.com/reference/cctype/isalnum/ */
-int is_english_alphanumeric(char c)
+int is_valid_for_salt(char c)
 {
-	if (c >= '0' && c <= '9') {
+	/* from "man 5 crypt", we see the hashed passphrase format:
+	 * [./0-9A-Za-z] */
+	if (c == '.') {
 		return c;
 	}
+	if (c == '/') {
+		return c;
+	}
+	/* the standard LibC "isalnum()" results may depend upon the locale
+	 * ( see: https://www.cplusplus.com/reference/cctype/isalnum/ )
+	 * thus do it by hand */
 	if (c >= 'A' && c <= 'Z') {
 		return c;
 	}
 	if (c >= 'a' && c <= 'z') {
+		return c;
+	}
+	if (c >= '0' && c <= '9') {
 		return c;
 	}
 	return 0;
