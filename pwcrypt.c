@@ -44,19 +44,26 @@
 
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
-void getpass(char *buf, char *buf2, size_t len, int confirm);
+void getpass(char *buf, char *buf2, size_t len, const char *type, int confirm);
 void getrandom_salt(char *buf, size_t len);
 char *fgetpass(char *buf, size_t len, FILE *stream);
 int is_valid_for_salt(char c);
+const char *crypt_algo(const char *in);
 
 /* functions */
-int main(void)
+int pwcrypt(int confirm, const char *type, const char *algorithm,
+	    const char *salt)
 {
 	const size_t plain_salt_size = Max_salt_len + 1;
 	char plain_salt[plain_salt_size];
-	getrandom_salt(plain_salt, plain_salt_size);
+	memset(plain_salt, 0x00, plain_salt_size);
+	if (salt) {
+		strncpy(plain_salt, salt, plain_salt_size);
+	} else {
+		getrandom_salt(plain_salt, plain_salt_size);
+	}
 
-	const char *algo = CRYPT_SHA512;
+	const char *algo = crypt_algo(algorithm);
 	const size_t algo_salt_size = plain_salt_size + 10;
 	char algo_salt[algo_salt_size];
 	snprintf(algo_salt, algo_salt_size, "$%s$%s$", algo, plain_salt);
@@ -65,15 +72,13 @@ int main(void)
 	/* data->initialized = 0; */
 	memset(&data, 0x00, sizeof(struct crypt_data));
 
-	int confirm = 1;
-
 	// TODO: use madvise with MADV_DONTDUMP, MADV_WIPEONFORK
 	const size_t plaintext_passphrase_size = 1024;
 	char plaintext_passphrase[plaintext_passphrase_size];
 	char plaintext_passphrase2[plaintext_passphrase_size];
 
 	getpass(plaintext_passphrase, plaintext_passphrase2,
-		plaintext_passphrase_size, confirm);
+		plaintext_passphrase_size, type, confirm);
 
 	char *encrypted = crypt_r(plaintext_passphrase, algo_salt, &data);
 	if (!encrypted) {
@@ -115,19 +120,24 @@ char *fgetpass(char *buf, size_t len, FILE *stream)
 	return str;
 }
 
-void getpass(char *buf, char *buf2, size_t size, int confirm)
+void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm)
 {
 	FILE *tty = fopen("/dev/tty", "r+");
 	if (!tty) {
 		err(EXIT_FAILURE, "fopen(/dev/tty, r+) failed");
 	}
 
+	if (!type) {
+		type = "";
+	}
+	const char *space = type[0] ? " " : "";
+
 	int diff = 0;
 	do {
 		if (diff) {
 			fprintf(tty, "inputs did not match\n");
 		}
-		fprintf(tty, " input passphrase: ");
+		fprintf(tty, " input %s%spassphrase: ", type, space);
 		fflush(tty);
 		char *r = fgetpass(buf, size, tty);
 		if (!r) {
@@ -138,7 +148,7 @@ void getpass(char *buf, char *buf2, size_t size, int confirm)
 		fflush(tty);
 
 		if (confirm) {
-			fprintf(tty, "repeat passphrase: ");
+			fprintf(tty, "repeat %s%spassphrase: ", type, space);
 			fflush(tty);
 			r = fgetpass(buf2, size, tty);
 			if (!r) {
@@ -153,6 +163,27 @@ void getpass(char *buf, char *buf2, size_t size, int confirm)
 		}
 	} while (diff);
 	fclose(tty);
+}
+
+const char *crypt_algo(const char *in)
+{
+	if (!in) {
+		return CRYPT_SHA512;
+	}
+
+	if (strcasecmp(in, "SHA512") == 0 || strcasecmp(in, CRYPT_SHA512) == 0) {
+		return CRYPT_SHA512;
+	}
+
+	if (strcasecmp(in, "SHA256") == 0 || strcasecmp(in, CRYPT_SHA256) == 0) {
+		return CRYPT_SHA256;
+	}
+
+	if (strcasecmp(in, "MD5") == 0 || strcasecmp(in, CRYPT_MD5) == 0) {
+		return CRYPT_SHA256;
+	}
+
+	return in;
 }
 
 void getrandom_salt(char *buf, size_t len)
@@ -215,4 +246,14 @@ int is_valid_for_salt(char c)
 		return c;
 	}
 	return 0;
+}
+
+int main(void)
+{
+	int confirm = 1;
+	const char *type = NULL;
+	const char *algorithm = "sha512";
+	const char *salt = NULL;
+
+	return pwcrypt(confirm, type, algorithm, salt);
 }
