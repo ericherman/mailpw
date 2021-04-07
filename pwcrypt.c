@@ -10,14 +10,16 @@
  *	pwcrypt \
  *		[--confirm] \
  *		[--type='email'] \
- *		[--algorthm='SHA512'] \
+ *		[--algorithm='SHA512'] \
  *		[--salt='UD23qlwjerf']
  *
  * To test against your own passwd, get your salt:
  *
- *	PW=`sudo grep $USER /etc/shadow | cut -f2 -d':' `
+ *	make
+ *	PW=`sudo grep $USER /etc/shadow | cut -f2 -d':'`
+ *	ALGO=`echo "$PW" | cut -d'$' -f2`
  *	SALT=`echo "$PW" | cut -d'$' -f3`
- *	GUESS=`pwcrypt --salt="$SALT"`
+ *	GUESS=`./pwcrypt --algorithm=$ALGO --salt="$SALT"`
  *	if [ "$GUESS" = "$PW" ]; then echo OK; else echo BAD; fi
  *
  */
