@@ -33,9 +33,6 @@
 #include <termios.h>
 #include <getopt.h>
 
-/* limit imposed by crypt_r */
-#define Max_salt_len 16
-
 /* see the "Notes" section of "man 3 crypt" for glibc crypt_r
  * algorithm options */
 #define CRYPT_MD5 "1"
@@ -43,7 +40,7 @@
 #define CRYPT_SHA256 "5"
 #define CRYPT_SHA512 "6"
 
-#define Pwcrypt_version "0.0.1"
+const char *pwcrypt_version_str = "0.0.1";
 
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
@@ -57,7 +54,9 @@ const char *crypt_algo(const char *in);
 int pwcrypt(int confirm, const char *type, const char *algorithm,
 	    const char *salt, FILE *out)
 {
-	const size_t plain_salt_size = Max_salt_len + 1;
+	/* limit imposed by crypt_r */
+	const size_t max_salt_len = 16;
+	const size_t plain_salt_size = max_salt_len + 1;
 	char plain_salt[plain_salt_size];
 	memset(plain_salt, 0x00, plain_salt_size);
 	if (salt) {
@@ -193,10 +192,11 @@ void getrandom_salt(char *buf, size_t len)
 {
 	assert(buf);
 	assert(len);
+
 	size_t max = (len - 1);
 	size_t pos = 0;
 	do {
-		const size_t rnd_buf_len = 10 * Max_salt_len;
+		const size_t rnd_buf_len = 128;
 		char rnd_buf[rnd_buf_len];
 		unsigned int flags = 0;
 		ssize_t got = getrandom(rnd_buf, rnd_buf_len, flags);
@@ -335,12 +335,13 @@ void pwcrypt_help(FILE *out)
 	fprintf(out, "   Add the STRING to the prompt\n");
 
 	fprintf(out, "  -v, --version                ");
-	fprintf(out, "   Prints the version (%s) and exits\n", Pwcrypt_version);
+	fprintf(out, "   Prints the version (%s) and exits\n",
+		pwcrypt_version_str);
 }
 
 void pwcrypt_version(FILE *out)
 {
-	fprintf(out, "pwcrypt version %s\n", Pwcrypt_version);
+	fprintf(out, "pwcrypt version %s\n", pwcrypt_version_str);
 }
 
 int pwcrypt_cli(int argc, char **argv, FILE *out)
