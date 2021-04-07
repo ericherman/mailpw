@@ -1,5 +1,7 @@
+PWC_CFLAGS=-g -Wall -Wextra -Wpedantic -Werror
+
 pwcrypt: pwcrypt.c
-	$(CC) ./pwcrypt.c -o pwcrypt -lcrypt
+	$(CC) $(PWC_CFLAGS) ./pwcrypt.c -o pwcrypt -lcrypt
 
 # extracted from https://github.com/torvalds/linux/blob/master/scripts/Lindent
 LINDENT=indent -npro -kr -i8 -ts8 -sob -l80 -ss -ncs -cp1 -il0
