@@ -128,15 +128,18 @@ void getpass(char *buf, char *buf2, size_t size, int confirm)
 			fprintf(tty, "inputs did not match\n");
 		}
 		fprintf(tty, " input passphrase: ");
+		fflush(tty);
 		char *r = fgetpass(buf, size, tty);
 		if (!r) {
 			err(EXIT_FAILURE,
 			    "fgetpass returned NULL reading buf of %zu", size);
 		}
 		fprintf(tty, "\n");
+		fflush(tty);
 
 		if (confirm) {
 			fprintf(tty, "repeat passphrase: ");
+			fflush(tty);
 			r = fgetpass(buf2, size, tty);
 			if (!r) {
 				err(EXIT_FAILURE,
@@ -144,10 +147,12 @@ void getpass(char *buf, char *buf2, size_t size, int confirm)
 				    size);
 			}
 			fprintf(tty, "\n");
+			fflush(tty);
 
 			diff = strncmp(buf, buf2, size);
 		}
 	} while (diff);
+	fclose(tty);
 }
 
 void getrandom_salt(char *buf, size_t len)
