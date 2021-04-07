@@ -31,6 +31,7 @@
 #include <string.h>
 #include <sys/random.h>
 #include <termios.h>
+#include <getopt.h>
 
 /* limit imposed by crypt_r */
 #define Max_salt_len 16
@@ -42,6 +43,8 @@
 #define CRYPT_SHA256 "5"
 #define CRYPT_SHA512 "6"
 
+#define Pwcrypt_version "0.0.1"
+
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
 void getpass(char *buf, char *buf2, size_t len, const char *type, int confirm);
@@ -52,7 +55,7 @@ const char *crypt_algo(const char *in);
 
 /* functions */
 int pwcrypt(int confirm, const char *type, const char *algorithm,
-	    const char *salt)
+	    const char *salt, FILE *out)
 {
 	const size_t plain_salt_size = Max_salt_len + 1;
 	char plain_salt[plain_salt_size];
@@ -87,7 +90,7 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 
 	memset(plaintext_passphrase, 0x00, plaintext_passphrase_size);
 
-	printf("%s\n", encrypted);
+	fprintf(out, "%s\n", encrypted);
 
 	return 0;
 }
@@ -167,7 +170,7 @@ void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm)
 
 const char *crypt_algo(const char *in)
 {
-	if (!in) {
+	if (!in || !in[0] || strcasecmp(in, "default") == 0) {
 		return CRYPT_SHA512;
 	}
 
@@ -180,7 +183,7 @@ const char *crypt_algo(const char *in)
 	}
 
 	if (strcasecmp(in, "MD5") == 0 || strcasecmp(in, CRYPT_MD5) == 0) {
-		return CRYPT_SHA256;
+		return CRYPT_MD5;
 	}
 
 	return in;
@@ -248,12 +251,125 @@ int is_valid_for_salt(char c)
 	return 0;
 }
 
-int main(void)
+void pwcrypt_parse_options(int *help, int *version, int *confirm,
+			   const char **type, const char **algorithm,
+			   const char **salt, int argc, char **argv)
 {
-	int confirm = 1;
+	assert(help);
+	assert(version);
+	assert(confirm);
+	assert(type);
+	assert(algorithm);
+	assert(salt);
+	assert(argc);
+	assert(argv);
+
+	/* omg, optstirng is horrible */
+	const char *optstring = "hvct::a::s::";
+	struct option long_options[] = {
+		{ "help", no_argument, 0, 'h' },
+		{ "version", no_argument, 0, 'v' },
+		{ "confirm", no_argument, 0, 'c' },
+		{ "type", optional_argument, 0, 't' },
+		{ "algorithm", optional_argument, 0, 'a' },
+		{ "salt", optional_argument, 0, 's' },
+		{ 0, 0, 0, 0 }
+	};
+
+	while (1) {
+		int option_index = 0;
+		int opt_char = getopt_long(argc, argv, optstring, long_options,
+					   &option_index);
+
+		/* Detect the end of the options */
+		if (opt_char == -1) {
+			break;
+		}
+
+		switch (opt_char) {
+		case 'h':
+			*help = 1;
+			break;
+		case 'v':
+			*version = 1;
+			break;
+		case 'c':
+			*confirm = 1;
+			break;
+		case 't':
+			*type = optarg;
+			break;
+		case 'a':
+			*algorithm = optarg;
+			break;
+		case 's':
+			*salt = optarg;
+			break;
+		default:	/* can this happen? */
+			break;
+		}
+	}
+}
+
+void pwcrypt_help(FILE *out)
+{
+	fprintf(out, "%s:%s() %d: \n", __FILE__, __func__, __LINE__);
+	fprintf(out, "Usage: pwcrypt [options]\n");
+	fprintf(out, "Options:\n");
+
+	fprintf(out, "  -a STRING, --algorithm=STRING");
+	fprintf(out, "   Use algorithm of STRING. Valid values are\n");
+	fprintf(out, "                               ");
+	fprintf(out, "   SHA512 (6, default), SHA256 (5), MD5 (1)\n");
+
+	fprintf(out, "  -c, --confirm                ");
+	fprintf(out, "   Prompts twice to enter the passphrase\n");
+
+	fprintf(out, "  -h, --help                   ");
+	fprintf(out, "   Prints this message and exits\n");
+
+	fprintf(out, "  -s STRING, --salt=STRING     ");
+	fprintf(out, "   Use the STRING as the salt\n");
+
+	fprintf(out, "  -t STRING, --type=STRING     ");
+	fprintf(out, "   Add the STRING to the prompt\n");
+
+	fprintf(out, "  -v, --version                ");
+	fprintf(out, "   Prints the version (%s) and exits\n", Pwcrypt_version);
+}
+
+void pwcrypt_version(FILE *out)
+{
+	fprintf(out, "pwcrypt version %s\n", Pwcrypt_version);
+}
+
+int pwcrypt_cli(int argc, char **argv, FILE *out)
+{
+	int help = 0;
+	int version = 0;
+	int confirm = 0;
 	const char *type = NULL;
-	const char *algorithm = "sha512";
+	const char *algorithm = NULL;
 	const char *salt = NULL;
 
-	return pwcrypt(confirm, type, algorithm, salt);
+	pwcrypt_parse_options(&help, &version, &confirm, &type, &algorithm,
+			      &salt, argc, argv);
+
+	if (help) {
+		pwcrypt_help(out);
+		return EXIT_SUCCESS;
+	}
+	if (version) {
+		pwcrypt_version(out);
+		return EXIT_SUCCESS;
+	}
+
+	return pwcrypt(confirm, type, algorithm, salt, out);
 }
+
+#ifndef PWCRYPT_TEST
+int main(int argc, char **argv)
+{
+	return pwcrypt_cli(argc, argv, stdout);
+}
+#endif
