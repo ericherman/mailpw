@@ -211,5 +211,3 @@ int is_valid_for_salt(char c)
 	}
 	return 0;
 }
-
-/* [1] https://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_05_01 */
