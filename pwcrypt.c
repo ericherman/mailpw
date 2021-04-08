@@ -48,7 +48,7 @@ const char *pwcrypt_version_str = "0.0.1";
 char *chomp_crlf(char *str, size_t max);
 void getpass(char *buf, char *buf2, size_t len, const char *type, int confirm);
 void getrandom_salt(char *buf, size_t len);
-char *fgetpass(char *buf, size_t len, FILE *stream);
+char *fgets_no_echo(char *buf, size_t len, FILE *stream);
 int is_valid_for_salt(char c);
 const char *crypt_algo(const char *in);
 
@@ -96,7 +96,7 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	return 0;
 }
 
-char *fgetpass(char *buf, size_t len, FILE *stream)
+char *fgets_no_echo(char *buf, size_t len, FILE *stream)
 {
 
 	int fno = fileno(stream);
@@ -114,7 +114,7 @@ char *fgetpass(char *buf, size_t len, FILE *stream)
 		err(EXIT_FAILURE, "tcsetattr failed for fd: %d", fno);
 	}
 
-	char *str = chomp_crlf(fgets(buf, len, stream), len);
+	char *str = fgets(buf, len, stream);
 
 	error = tcsetattr(fno, TCSAFLUSH, &orig);
 	if (error) {
@@ -143,23 +143,26 @@ void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm)
 		}
 		fprintf(tty, " input %s%spassphrase: ", type, space);
 		fflush(tty);
-		char *r = fgetpass(buf, size, tty);
+		char *r = fgets_no_echo(buf, size, tty);
 		if (!r) {
 			err(EXIT_FAILURE,
-			    "fgetpass returned NULL reading buf of %zu", size);
+			    "fgets_no_echo returned NULL reading buf of %zu",
+			    size);
 		}
+		chomp_crlf(buf, size);
 		fprintf(tty, "\n");
 		fflush(tty);
 
 		if (confirm) {
 			fprintf(tty, "repeat %s%spassphrase: ", type, space);
 			fflush(tty);
-			r = fgetpass(buf2, size, tty);
+			r = fgets_no_echo(buf2, size, tty);
 			if (!r) {
 				err(EXIT_FAILURE,
-				    "fgetpass returned NULL reading buf of %zu?",
-				    size);
+				    "fgets_no_echo returned NULL"
+				    " reading buf of %zu?", size);
 			}
+			chomp_crlf(buf2, size);
 			fprintf(tty, "\n");
 			fflush(tty);
 
