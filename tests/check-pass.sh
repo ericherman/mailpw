@@ -5,7 +5,7 @@
 # set -x
 set -e
 
-while getopts ":f:u:" opt
+while getopts ":f:u:t:" opt
 do
         case $opt in
         f)
@@ -14,6 +14,9 @@ do
         u)
                 SHADOW_USER="$OPTARG"
                 ;;
+	t)
+		PWCRYPT_TYPE="--type=$OPTARG"
+		;;
         \?)
                 echo "Unknown Option: -$OPTARG" >&2
                 exit 1
@@ -73,7 +76,7 @@ fi
 PW=`$SUDO grep $SHADOW_USER "$SHADOW_FILE" | cut -f2 -d':'`
 ALGO=`echo "$PW" | cut -d'$' -f2`
 SALT=`echo "$PW" | cut -d'$' -f3`
-GUESS=`$PWCRYPT --algorithm=$ALGO --salt="$SALT"`
+GUESS=`$PWCRYPT $PWCRYPT_TYPE --algorithm=$ALGO --salt="$SALT"`
 if [ "$GUESS" = "$PW" ]
 then
 	echo OK

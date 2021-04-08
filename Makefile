@@ -36,8 +36,22 @@ check-is-valid-for-salt: test-is-valid-for-salt
 	./test-is-valid-for-salt
 	@echo "SUCCESS! ($@)"
 
-check: check-crypt-algo \
+check-unit: check-crypt-algo \
 		check-is-valid-for-salt
+	@echo "SUCCESS! ($@)"
+
+check-acceptance-sha512: pwcrypt tests/pwcrypt-expect.sh tests/faux-shadow
+	tests/pwcrypt-expect.sh alice foo | grep OK
+	@echo "SUCCESS! ($@)"
+
+check-acceptance-md5: pwcrypt tests/pwcrypt-expect.sh tests/faux-shadow
+	tests/pwcrypt-expect.sh bob bar | grep OK
+	@echo "SUCCESS! ($@)"
+
+check-acceptance: check-acceptance-md5 check-acceptance-sha512
+	@echo "SUCCESS! ($@)"
+
+check: check-unit check-acceptance
 	@echo "SUCCESS! ($@)"
 
 # extracted from https://github.com/torvalds/linux/blob/master/scripts/Lindent
