@@ -29,6 +29,13 @@ check-crypt-algo: test-crypt-algo
 	./test-crypt-algo
 	@echo "SUCCESS! ($@)"
 
+test-getpass: tests/test-getpass.c $(TEST_DEPS)
+	$(CC) $(TEST_CFLAGS) $< -o $@ $(PWC_LDADD)
+
+check-getpass: test-getpass
+	./test-getpass
+	@echo "SUCCESS! ($@)"
+
 test-is-valid-for-salt: tests/test-is-valid-for-salt.c $(TEST_DEPS)
 	$(CC) $(TEST_CFLAGS) $< -o $@ $(PWC_LDADD)
 
@@ -37,6 +44,7 @@ check-is-valid-for-salt: test-is-valid-for-salt
 	@echo "SUCCESS! ($@)"
 
 check-unit: check-crypt-algo \
+		check-getpass \
 		check-is-valid-for-salt
 	@echo "SUCCESS! ($@)"
 

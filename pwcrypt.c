@@ -46,8 +46,8 @@ const char *pwcrypt_version_str = "0.0.1";
 
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
-void getpass(char *buf, char *buf2, size_t size, FILE *tty, const char *type,
-	     int confirm);
+void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm,
+	     char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty);
 void getrandom_salt(char *buf, size_t size);
 char *fgets_no_echo(char *buf, int size, FILE *stream);
 int is_valid_for_salt(char c);
@@ -88,7 +88,7 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	}
 
 	getpass(plaintext_passphrase, plaintext_passphrase2,
-		plaintext_passphrase_size, tty, type, confirm);
+		plaintext_passphrase_size, type, confirm, fgets_no_echo, tty);
 
 	fclose(tty);
 
@@ -132,8 +132,8 @@ char *fgets_no_echo(char *buf, int size, FILE *stream)
 	return str;
 }
 
-void getpass(char *buf, char *buf2, size_t size, FILE *tty, const char *type,
-	     int confirm)
+void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm,
+	     char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty)
 {
 	assert(buf);
 	assert(!confirm || buf2);
@@ -152,7 +152,7 @@ void getpass(char *buf, char *buf2, size_t size, FILE *tty, const char *type,
 		}
 		fprintf(tty, " input %s%spassphrase: ", type, space);
 		fflush(tty);
-		char *r = fgets_no_echo(buf, size, tty);
+		char *r = fgets_func(buf, size, tty);
 		if (!r) {
 			err(EXIT_FAILURE,
 			    "fgets_no_echo returned NULL reading buf of %zu",
@@ -165,7 +165,7 @@ void getpass(char *buf, char *buf2, size_t size, FILE *tty, const char *type,
 		if (confirm) {
 			fprintf(tty, "repeat %s%spassphrase: ", type, space);
 			fflush(tty);
-			r = fgets_no_echo(buf2, size, tty);
+			r = fgets_func(buf2, size, tty);
 			if (!r) {
 				err(EXIT_FAILURE,
 				    "fgets_no_echo returned NULL"
