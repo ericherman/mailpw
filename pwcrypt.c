@@ -46,10 +46,10 @@ const char *pwcrypt_version_str = "0.0.1";
 
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
-void getpass(char *buf, char *buf2, size_t len, FILE *tty, const char *type,
+void getpass(char *buf, char *buf2, size_t size, FILE *tty, const char *type,
 	     int confirm);
-void getrandom_salt(char *buf, size_t len);
-char *fgets_no_echo(char *buf, size_t len, FILE *stream);
+void getrandom_salt(char *buf, size_t size);
+char *fgets_no_echo(char *buf, size_t size, FILE *stream);
 int is_valid_for_salt(char c);
 const char *crypt_algo(const char *in);
 
@@ -104,7 +104,7 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	return 0;
 }
 
-char *fgets_no_echo(char *buf, size_t len, FILE *stream)
+char *fgets_no_echo(char *buf, size_t size, FILE *stream)
 {
 
 	int fno = fileno(stream);
@@ -122,7 +122,7 @@ char *fgets_no_echo(char *buf, size_t len, FILE *stream)
 		err(EXIT_FAILURE, "tcsetattr failed for fd: %d", fno);
 	}
 
-	char *str = fgets(buf, len, stream);
+	char *str = fgets(buf, size, stream);
 
 	error = tcsetattr(fno, TCSAFLUSH, &orig);
 	if (error) {
@@ -201,36 +201,36 @@ const char *crypt_algo(const char *in)
 	return in;
 }
 
-void getrandom_salt(char *buf, size_t len)
+void getrandom_salt(char *buf, size_t size)
 {
 	assert(buf);
-	assert(len);
+	assert(size);
 
-	size_t max = (len - 1);
-	size_t pos = 0;
+	memset(buf, 0x00, size);
+
+	size_t max = (size - 1);
+	size_t len = 0;
 	do {
-		const size_t rnd_buf_len = 128;
-		char rnd_buf[rnd_buf_len];
+		const size_t rnd_buf_size = 128;
+		char rnd_buf[rnd_buf_size];
 		unsigned int flags = 0;
-		ssize_t got = getrandom(rnd_buf, rnd_buf_len, flags);
+		ssize_t got = getrandom(rnd_buf, rnd_buf_size, flags);
 
-		for (ssize_t i = 0; i < got && pos < max; ++i) {
+		for (ssize_t i = 0; i < got && len < max; ++i) {
 			char c = rnd_buf[i];
 			if (is_valid_for_salt(c)) {
-				buf[pos++] = c;
+				buf[len++] = c;
 			}
 		}
-	} while (pos < max);
-	buf[pos++] = '\0';
+	} while (len < max);
 }
 
-/* boring stuff */
-char *chomp_crlf(char *str, size_t max)
+char *chomp_crlf(char *str, size_t size)
 {
 	if (!str) {
 		return NULL;
 	}
-	for (size_t i = 0; i < max && str[i] != '\0'; ++i) {
+	for (size_t i = 0; i < size && str[i] != '\0'; ++i) {
 		if (str[i] == '\r' || str[i] == '\n') {
 			str[i] = '\0';
 			return str;
