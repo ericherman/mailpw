@@ -49,7 +49,7 @@ char *chomp_crlf(char *str, size_t max);
 void getpass(char *buf, char *buf2, size_t size, FILE *tty, const char *type,
 	     int confirm);
 void getrandom_salt(char *buf, size_t size);
-char *fgets_no_echo(char *buf, size_t size, FILE *stream);
+char *fgets_no_echo(char *buf, int size, FILE *stream);
 int is_valid_for_salt(char c);
 const char *crypt_algo(const char *in);
 
@@ -104,7 +104,7 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	return 0;
 }
 
-char *fgets_no_echo(char *buf, size_t size, FILE *stream)
+char *fgets_no_echo(char *buf, int size, FILE *stream)
 {
 
 	int fno = fileno(stream);
