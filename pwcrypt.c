@@ -46,7 +46,8 @@ const char *pwcrypt_version_str = "0.0.1";
 
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
-void getpass(char *buf, char *buf2, size_t len, const char *type, int confirm);
+void getpass(char *buf, char *buf2, size_t len, FILE *tty, const char *type,
+	     int confirm);
 void getrandom_salt(char *buf, size_t len);
 char *fgets_no_echo(char *buf, size_t len, FILE *stream);
 int is_valid_for_salt(char c);
@@ -81,8 +82,15 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	char plaintext_passphrase[plaintext_passphrase_size];
 	char plaintext_passphrase2[plaintext_passphrase_size];
 
+	FILE *tty = fopen("/dev/tty", "r+");
+	if (!tty) {
+		err(EXIT_FAILURE, "fopen(/dev/tty, r+) failed");
+	}
+
 	getpass(plaintext_passphrase, plaintext_passphrase2,
-		plaintext_passphrase_size, type, confirm);
+		plaintext_passphrase_size, tty, type, confirm);
+
+	fclose(tty);
 
 	char *encrypted = crypt_r(plaintext_passphrase, algo_salt, &data);
 	if (!encrypted) {
@@ -124,12 +132,13 @@ char *fgets_no_echo(char *buf, size_t len, FILE *stream)
 	return str;
 }
 
-void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm)
+void getpass(char *buf, char *buf2, size_t size, FILE *tty, const char *type,
+	     int confirm)
 {
-	FILE *tty = fopen("/dev/tty", "r+");
-	if (!tty) {
-		err(EXIT_FAILURE, "fopen(/dev/tty, r+) failed");
-	}
+	assert(buf);
+	assert(!confirm || buf2);
+	assert(size);
+	assert(tty);
 
 	if (!type) {
 		type = "";
@@ -169,7 +178,6 @@ void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm)
 			diff = strncmp(buf, buf2, size);
 		}
 	} while (diff);
-	fclose(tty);
 }
 
 const char *crypt_algo(const char *in)
