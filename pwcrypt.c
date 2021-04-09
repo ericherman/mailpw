@@ -55,17 +55,28 @@ const char *crypt_algo(const char *in);
 
 /* functions */
 int pwcrypt(int confirm, const char *type, const char *algorithm,
-	    const char *salt, FILE *out)
+	    const char *user_salt, FILE *out)
 {
-	/* limit imposed by crypt_r */
-	const size_t salt_max_len = 16;
-	const size_t salt_buf_size = salt_max_len + 1;
+	/* The salt_buf_size is arbitrary, but user_salt may also contain
+	 * "rounds" or other data. From man crypt_r:
+	 *
+	 * Since glibc 2.7, the SHA-256 and SHA-512 implementations
+	 * support a user-supplied number of hashing rounds,
+	 * defaulting to 5000.  If the "$id$" characters in the salt
+	 * are followed by "rounds=xxx$", where xxx is an integer,
+	 * then the result has the form
+	 *
+	 *     $id$rounds=yyy$salt$encrypted
+	 */
+	const size_t salt_buf_size = 200;
 	char salt_buf[salt_buf_size];
 	memset(salt_buf, 0x00, salt_buf_size);
-	if (salt) {
-		strncpy(salt_buf, salt, salt_buf_size);
+	if (user_salt) {
+		strncpy(salt_buf, user_salt, salt_buf_size);
 	} else {
-		getrandom_salt(salt_buf, salt_buf_size);
+		/* limit imposed by crypt_r */
+		const size_t salt_max_len = 16;
+		getrandom_salt(salt_buf, salt_max_len + 1);
 	}
 
 	const char *algo = crypt_algo(algorithm);
