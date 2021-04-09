@@ -55,7 +55,8 @@ const char *crypt_algo(const char *in);
 
 /* functions */
 int pwcrypt(int confirm, const char *type, const char *algorithm,
-	    const char *user_salt, FILE *out)
+	    const char *user_salt, FILE *out,
+	    char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty)
 {
 	/* The salt_buf_size is arbitrary, but user_salt may also contain
 	 * "rounds" or other data. From man crypt_r:
@@ -93,15 +94,8 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	char plaintext_passphrase[plaintext_passphrase_size];
 	char plaintext_passphrase2[plaintext_passphrase_size];
 
-	FILE *tty = fopen("/dev/tty", "r+");
-	if (!tty) {
-		err(EXIT_FAILURE, "fopen(/dev/tty, r+) failed");
-	}
-
 	getpass(plaintext_passphrase, plaintext_passphrase2,
-		plaintext_passphrase_size, type, confirm, fgets_no_echo, tty);
-
-	fclose(tty);
+		plaintext_passphrase_size, type, confirm, fgets_func, tty);
 
 	char *encrypted = crypt_r(plaintext_passphrase, algo_salt, &data);
 	if (!encrypted) {
@@ -388,8 +382,17 @@ int pwcrypt_cli(int argc, char **argv, FILE *out)
 		pwcrypt_version(out);
 		return EXIT_SUCCESS;
 	}
+	FILE *tty = fopen("/dev/tty", "r+");
+	if (!tty) {
+		err(EXIT_FAILURE, "fopen(/dev/tty, r+) failed");
+	}
 
-	return pwcrypt(confirm, type, algorithm, salt, out);
+	int rv = pwcrypt(confirm, type, algorithm, salt, out,
+			 fgets_no_echo, tty);
+
+	fclose(tty);
+
+	return rv;
 }
 
 #ifndef PWCRYPT_TEST
