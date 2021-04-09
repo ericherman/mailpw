@@ -13,12 +13,12 @@ unsigned run_named_test(const char *name, unsigned (*func)(void));
 
 #define run_test(func) run_named_test(#func, func)
 
-unsigned check_expression_flf(const char *file, int line, const char *func,
-			      int expression, const char *expr_str,
-			      const char *format, ...);
+unsigned check_expression_result(const char *file, int line, const char *func,
+				 int result, const char *expr_str,
+				 const char *format, ...);
 
 #define check(expression, format, ...) \
-	check_expression_flf(__FILE__, __LINE__, __func__, \
+	check_expression_result(__FILE__, __LINE__, __func__, \
 			(expression) ? 1 : 0, #expression, \
 			format __VA_OPT__(,) __VA_ARGS__)
 

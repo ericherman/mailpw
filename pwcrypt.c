@@ -74,7 +74,7 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	memset(salt_buf, 0x00, salt_buf_size);
 	if (user_salt) {
 		strncpy(salt_buf, user_salt, salt_buf_size);
-		salt_buf[salt_buf_size-1] = '\0';
+		salt_buf[salt_buf_size - 1] = '\0';
 	} else {
 		/* limit imposed by crypt_r */
 		const size_t salt_max_len = 16;

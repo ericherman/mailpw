@@ -39,11 +39,11 @@ int failures_to_status(const char *name, unsigned failures)
 	return exit_code;
 }
 
-unsigned check_expression_flf(const char *file, int line, const char *func,
-			      int expression, const char *expr_str,
-			      const char *format, ...)
+unsigned check_expression_result(const char *file, int line, const char *func,
+				 int result, const char *expr_str,
+				 const char *format, ...)
 {
-	if (expression) {
+	if (result) {
 		return 0;
 	}
 
