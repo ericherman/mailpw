@@ -58,20 +58,20 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	    const char *salt, FILE *out)
 {
 	/* limit imposed by crypt_r */
-	const size_t max_salt_len = 16;
-	const size_t plain_salt_size = max_salt_len + 1;
-	char plain_salt[plain_salt_size];
-	memset(plain_salt, 0x00, plain_salt_size);
+	const size_t salt_max_len = 16;
+	const size_t salt_buf_size = salt_max_len + 1;
+	char salt_buf[salt_buf_size];
+	memset(salt_buf, 0x00, salt_buf_size);
 	if (salt) {
-		strncpy(plain_salt, salt, plain_salt_size);
+		strncpy(salt_buf, salt, salt_buf_size);
 	} else {
-		getrandom_salt(plain_salt, plain_salt_size);
+		getrandom_salt(salt_buf, salt_buf_size);
 	}
 
 	const char *algo = crypt_algo(algorithm);
-	const size_t algo_salt_size = plain_salt_size + 10;
+	const size_t algo_salt_size = salt_buf_size + 10;
 	char algo_salt[algo_salt_size];
-	snprintf(algo_salt, algo_salt_size, "$%s$%s$", algo, plain_salt);
+	snprintf(algo_salt, algo_salt_size, "$%s$%s$", algo, salt_buf);
 
 	struct crypt_data data;
 	/* data->initialized = 0; */
