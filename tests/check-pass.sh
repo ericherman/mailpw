@@ -5,39 +5,48 @@
 #set -x
 set -e
 
-while getopts ":f:u:t:n" opt
+while getopts ":f:u:t:nie" opt
 do
-        case $opt in
-        f)
-                SHADOW_FILE="$OPTARG"
-                ;;
-        u)
-                SHADOW_USER="$OPTARG"
-                ;;
+	case $opt in
+	f)
+		SHADOW_FILE="$OPTARG"
+		;;
+	u)
+		SHADOW_USER="$OPTARG"
+		;;
 	t)
 		PWCRYPT_TYPE="--type=$OPTARG"
 		;;
 	n)
 		PW_NO_CONFIRM="--no-confirm"
 		;;
-        \?)
-                echo "Unknown Option: -$OPTARG" >&2
-                exit 1
-                ;;
-        :)
-                echo "Option -$OPTARG requires an argument" >&2
-                exit 1
-                ;;
-        esac
+	i)
+		PW_STDIN="--use-stdin"
+		echo "" >&2
+		echo "WARN: $PW_STDIN may not work" >&2
+		echo "" >&2
+		;;
+	e)
+		PW_ECHO_PASSWD="--echo-password"
+		;;
+	\?)
+		echo "Unknown Option: -$OPTARG" >&2
+		exit 1
+		;;
+	:)
+		echo "Option -$OPTARG requires an argument" >&2
+		exit 1
+		;;
+	esac
 done
 
 if [ "_${SHADOW_FILE}_" == "__" ]
 then
-        SHADOW_FILE=$1
+	SHADOW_FILE=$1
 fi
 if [ "_${SHADOW_FILE}_" == "__" ]
 then
-        SHADOW_FILE=/etc/shadow
+	SHADOW_FILE=/etc/shadow
 fi
 SHADOW_FILE=`readlink -vf "${SHADOW_FILE}"`
 if [[ ! -e $SHADOW_FILE ]]
@@ -48,11 +57,11 @@ fi
 
 if [ "_${SHADOW_USER}_" == "__" ]
 then
-        SHADOW_USER=$2
+	SHADOW_USER=$2
 fi
 if [ "_${SHADOW_USER}_" == "__" ]
 then
-        SHADOW_USER=$USER
+	SHADOW_USER=$USER
 fi
 
 echo "reading '$SHADOW_FILE' for '$USER'"
@@ -77,9 +86,14 @@ else
 fi
 
 PW=`$SUDO grep $SHADOW_USER "$SHADOW_FILE" | cut -f2 -d':'`
+# echo "PW='$PW'"
 ALGO=`echo "$PW" | cut -d'$' -f2`
+# echo "ALGO='$ALGO'"
 SALT=`echo "$PW" | cut -d'$' -f3`
-GUESS=`$PWCRYPT $PWCRYPT_TYPE $PW_NO_CONFIRM --algorithm=$ALGO --salt="$SALT"`
+# echo "SALT='$SALT'"
+GUESS=`$PWCRYPT $PWCRYPT_TYPE $PW_NO_CONFIRM $PW_STDIN $PW_ECHO_PASSWD \
+	--algorithm=$ALGO --salt="$SALT"`
+# echo "GUESS='$GUESS'"
 if [ "$GUESS" = "$PW" ]
 then
 	echo OK
