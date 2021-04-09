@@ -1,0 +1,69 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+
+sub change_instance_passwds {
+    my ( $user, $instances, $pwcrypt ) = @_;
+    $pwcrypt ||= './pwcrypt';
+
+    my %user_instances;
+
+    foreach my $instance ( keys %{$instances} ) {
+        foreach my $pwfile ( @{ $instances->{$instance} } ) {
+            print( $pwfile, "\n" );
+            open( my $in, '<', $pwfile ) or die "$pwfile: $!";
+            while (<$in>) {
+                if (/^$user[: ]/) {
+                    push @{ $user_instances{$instance} }, $pwfile;
+                }
+            }
+            close($in);
+        }
+    }
+
+    foreach my $instance ( keys(%user_instances) ) {
+        printf("You have a password in $instance\n");
+    }
+
+    my @instances_to_change;
+    if ( scalar( keys(%user_instances) ) > 1 ) {
+
+        # TODO: prompt for which ones
+        # found in more than 1 instance prompt for instance,
+        #   e.g.: "tdf, logicgate, all?"
+        push @instances_to_change, keys(%user_instances);
+    }
+    else {
+        push @instances_to_change, keys(%user_instances);
+    }
+
+    my $password = `$pwcrypt --confirm --type=mail`;
+    chomp($password);
+
+    print "password: '$password'\n";
+}
+
+# get $USER
+my $whoami = `/bin/who am i`;
+( my $user = $whoami ) =~ s/\s.*//;
+chomp($user);
+
+# list of instances (tdf, keithr, logicgate)
+# locate 2 files:
+#  * location of the smtpd passwd file
+#  * location of the dovcot passwd file
+# TODO: read this from a file
+#  * make a test file with known values
+#  * write perl tests
+#    * pass in $pwcrypt of "./crypt --use-stdin --salt=12345"
+#    * (thus modify pwcrypt to take --use-stdin)
+#    * (consider changing --confirm to --no-confirm)
+my $instances = {
+    tdf    => [ '/our/tdf/dovecot/passwd',    '/our/tdf/opensmtpd/users' ],
+    keithr => [ '/our/keithr/dovecot/passwd', '/our/keithr/opensmtpd/users' ],
+};
+
+# prompt for password
+# change passwd in appropriate files
+# signal services?
+change_instance_passwds( $user, $instances );
