@@ -266,13 +266,13 @@ int is_valid_for_salt(char c)
 	return 0;
 }
 
-void pwcrypt_parse_options(int *help, int *version, int *confirm,
+void pwcrypt_parse_options(int *help, int *version, int *no_confirm,
 			   const char **type, const char **algorithm,
 			   const char **salt, int argc, char **argv)
 {
 	assert(help);
 	assert(version);
-	assert(confirm);
+	assert(no_confirm);
 	assert(type);
 	assert(algorithm);
 	assert(salt);
@@ -280,11 +280,11 @@ void pwcrypt_parse_options(int *help, int *version, int *confirm,
 	assert(argv);
 
 	/* omg, optstirng is horrible */
-	const char *optstring = "hvct::a::s::";
+	const char *optstring = "hvnt::a::s::";
 	struct option long_options[] = {
 		{ "help", no_argument, 0, 'h' },
 		{ "version", no_argument, 0, 'v' },
-		{ "confirm", no_argument, 0, 'c' },
+		{ "no-confirm", no_argument, 0, 'n' },
 		{ "type", optional_argument, 0, 't' },
 		{ "algorithm", optional_argument, 0, 'a' },
 		{ "salt", optional_argument, 0, 's' },
@@ -308,8 +308,8 @@ void pwcrypt_parse_options(int *help, int *version, int *confirm,
 		case 'v':
 			*version = 1;
 			break;
-		case 'c':
-			*confirm = 1;
+		case 'n':
+			*no_confirm = 1;
 			break;
 		case 't':
 			*type = optarg;
@@ -339,11 +339,11 @@ void pwcrypt_help(FILE *out)
 	fprintf(out, "                               ");
 	fprintf(out, "   or other values supported by crypt_r(3).\n");
 
-	fprintf(out, "  -c, --confirm                ");
-	fprintf(out, "   Prompts twice to enter the passphrase.\n");
-
 	fprintf(out, "  -h, --help                   ");
 	fprintf(out, "   Prints this message and exits.\n");
+
+	fprintf(out, "  -n, --no-confirm                ");
+	fprintf(out, "   Do not prompt twice to enter the passphrase.\n");
 
 	fprintf(out, "  -s STRING, --salt=STRING     ");
 	fprintf(out, "   Use the STRING as the salt.\n");
@@ -365,12 +365,12 @@ int pwcrypt_cli(int argc, char **argv, FILE *out)
 {
 	int help = 0;
 	int version = 0;
-	int confirm = 0;
+	int no_confirm = 0;
 	const char *type = NULL;
 	const char *algorithm = NULL;
 	const char *salt = NULL;
 
-	pwcrypt_parse_options(&help, &version, &confirm, &type, &algorithm,
+	pwcrypt_parse_options(&help, &version, &no_confirm, &type, &algorithm,
 			      &salt, argc, argv);
 
 	if (help) {
@@ -386,6 +386,7 @@ int pwcrypt_cli(int argc, char **argv, FILE *out)
 		err(EXIT_FAILURE, "fopen(/dev/tty, r+) failed");
 	}
 
+	int confirm = no_confirm ? 0 : 1;
 	int rv = pwcrypt(confirm, type, algorithm, salt, out,
 			 fgets_no_echo, tty);
 

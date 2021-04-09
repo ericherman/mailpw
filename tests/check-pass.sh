@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2021 Eric Herman <eric@freesa.org>
 
-# set -x
+#set -x
 set -e
 
-while getopts ":f:u:t:" opt
+while getopts ":f:u:t:n" opt
 do
         case $opt in
         f)
@@ -16,6 +16,9 @@ do
                 ;;
 	t)
 		PWCRYPT_TYPE="--type=$OPTARG"
+		;;
+	n)
+		PW_NO_CONFIRM="--no-confirm"
 		;;
         \?)
                 echo "Unknown Option: -$OPTARG" >&2
@@ -76,7 +79,7 @@ fi
 PW=`$SUDO grep $SHADOW_USER "$SHADOW_FILE" | cut -f2 -d':'`
 ALGO=`echo "$PW" | cut -d'$' -f2`
 SALT=`echo "$PW" | cut -d'$' -f3`
-GUESS=`$PWCRYPT $PWCRYPT_TYPE --algorithm=$ALGO --salt="$SALT"`
+GUESS=`$PWCRYPT $PWCRYPT_TYPE $PW_NO_CONFIRM --algorithm=$ALGO --salt="$SALT"`
 if [ "$GUESS" = "$PW" ]
 then
 	echo OK

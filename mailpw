@@ -37,7 +37,7 @@ sub change_instance_passwds {
         push @instances_to_change, keys(%user_instances);
     }
 
-    my $password = `$pwcrypt --confirm --type=mail`;
+    my $password = `$pwcrypt --type=mail`;
     chomp($password);
 
     print "password: '$password'\n";
