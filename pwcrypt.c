@@ -37,7 +37,7 @@
 
 /* see the "Notes" section of "man 3 crypt" for glibc crypt_r
  * algorithm options */
-#define CRYPT_MD5 "1"
+/* #define CRYPT_MD5 "1" */
 /* #define CRYPT_BLOWFISH "2a" */
 #define CRYPT_SHA256 "5"
 #define CRYPT_SHA512 "6"
@@ -74,6 +74,7 @@ int pwcrypt(int confirm, const char *type, const char *algorithm,
 	memset(salt_buf, 0x00, salt_buf_size);
 	if (user_salt) {
 		strncpy(salt_buf, user_salt, salt_buf_size);
+		salt_buf[salt_buf_size-1] = '\0';
 	} else {
 		/* limit imposed by crypt_r */
 		const size_t salt_max_len = 16;
@@ -197,10 +198,6 @@ const char *crypt_algo(const char *in)
 
 	if (strcasecmp(in, "SHA256") == 0 || strcasecmp(in, CRYPT_SHA256) == 0) {
 		return CRYPT_SHA256;
-	}
-
-	if (strcasecmp(in, "MD5") == 0 || strcasecmp(in, CRYPT_MD5) == 0) {
-		return CRYPT_MD5;
 	}
 
 	return in;
@@ -338,22 +335,24 @@ void pwcrypt_help(FILE *out)
 	fprintf(out, "  -a STRING, --algorithm=STRING");
 	fprintf(out, "   Use algorithm of STRING. Valid values are\n");
 	fprintf(out, "                               ");
-	fprintf(out, "   SHA512 (6, default), SHA256 (5), MD5 (1)\n");
+	fprintf(out, "   SHA512 (6, default), SHA256 (5)\n");
+	fprintf(out, "                               ");
+	fprintf(out, "   or other values supported by crypt_r(3).\n");
 
 	fprintf(out, "  -c, --confirm                ");
-	fprintf(out, "   Prompts twice to enter the passphrase\n");
+	fprintf(out, "   Prompts twice to enter the passphrase.\n");
 
 	fprintf(out, "  -h, --help                   ");
-	fprintf(out, "   Prints this message and exits\n");
+	fprintf(out, "   Prints this message and exits.\n");
 
 	fprintf(out, "  -s STRING, --salt=STRING     ");
-	fprintf(out, "   Use the STRING as the salt\n");
+	fprintf(out, "   Use the STRING as the salt.\n");
 
 	fprintf(out, "  -t STRING, --type=STRING     ");
-	fprintf(out, "   Add the STRING to the prompt\n");
+	fprintf(out, "   Add the STRING to the prompt.\n");
 
 	fprintf(out, "  -v, --version                ");
-	fprintf(out, "   Prints the version (%s) and exits\n",
+	fprintf(out, "   Prints the version (%s) and exits.\n",
 		pwcrypt_version_str);
 }
 

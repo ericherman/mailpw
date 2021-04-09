@@ -27,17 +27,6 @@ unsigned test_crypt_algo_sha256(void)
 	return failures;
 }
 
-unsigned test_crypt_algo_md5(void)
-{
-	unsigned failures = 0;
-
-	failures += check_str(CRYPT_MD5, crypt_algo("md5"), "lc");
-	failures += check_str(CRYPT_MD5, crypt_algo("MD5"), "uc");
-	failures += check_str(CRYPT_MD5, crypt_algo("1"), "num");
-
-	return failures;
-}
-
 unsigned test_crypt_algo_defaults(void)
 {
 	unsigned failures = 0;
@@ -53,6 +42,7 @@ unsigned test_crypt_algo_garbage_in_garbage_out(void)
 {
 	unsigned failures = 0;
 
+	failures += check_str("1", crypt_algo("1"), "md5");
 	failures += check_str("2a", crypt_algo("2a"), "blowfish");
 	failures += check_str("garbage", crypt_algo("garbage"), "bogus");
 
@@ -65,7 +55,6 @@ int main(void)
 
 	failures += run_test(test_crypt_algo_sha512);
 	failures += run_test(test_crypt_algo_sha256);
-	failures += run_test(test_crypt_algo_md5);
 	failures += run_test(test_crypt_algo_defaults);
 	failures += run_test(test_crypt_algo_garbage_in_garbage_out);
 
