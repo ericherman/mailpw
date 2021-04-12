@@ -2,20 +2,21 @@
 use strict;
 use warnings;
 
-my $pwtype='faux-password';
-my $salt='I.amFrij';
-my $pw='bar';
-my $algo='1';
-my $hash='$1$I.amFrij$h8Orif34zr5liFE1ck9Js/';
+my $pwtype = 'faux-password';
+my $salt   = 'I.amFrij';
+my $pw     = 'bar';
+my $algo   = '1';
+my $hash   = '$1$I.amFrij$h8Orif34zr5liFE1ck9Js/';
 
-my $output=`tests/expect-confirm.sh $pwtype $algo $salt $pw`;
+my $output = `tests/expect-confirm.sh $pwtype $algo $salt $pw`;
 
 my $prompt = "$pwtype passphrase: ";
-die "prompt '$prompt' missing" unless ($output =~ "$prompt");
+die "prompt '$prompt' missing" unless ( $output =~ "$prompt" );
 
-die "passphrase found in output" if ($output =~ $pw);
+die "passphrase found in output" if ( $output =~ $pw );
+
 # assert that the hash is the last line of the output
 
-my @lines = split(/[\r\n]/, $output);
+my @lines     = split( /[\r\n]/, $output );
 my $last_line = $lines[-1];
-die "hash not matched ($last_line, $hash)" unless ($last_line eq $hash);
+die "hash not matched ($last_line, $hash)" unless ( $last_line eq $hash );
