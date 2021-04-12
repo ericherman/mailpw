@@ -51,8 +51,7 @@ unsigned test_getpass_no_confirm_no_type(void)
 
 	global_ctx = &ctx;
 
-	getpass(buf, buf2, buf_size, type, confirm, fgets_bogus, ctx.tty,
-		ctx.tty);
+	getpass(buf, buf2, buf_size, type, confirm, fgets_bogus, ctx.tty);
 
 	fclose(ctx.tty);
 
@@ -107,8 +106,7 @@ unsigned test_getpass_wrong_first_try(void)
 
 	global_ctx = &ctx;
 
-	getpass(buf, buf2, buf_size, type, confirm, wrong_first_try, ctx.tty,
-		ctx.tty);
+	getpass(buf, buf2, buf_size, type, confirm, wrong_first_try, ctx.tty);
 
 	fclose(ctx.tty);
 

@@ -47,18 +47,16 @@ const char *pwcrypt_version_str = "0.0.1";
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
 void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm,
-	     char *(*fgets_func)(char *buf, int size, FILE *in), FILE *in,
-	     FILE *out);
+	     char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty);
 void getrandom_salt(char *buf, size_t size);
 char *fgets_no_echo(char *buf, int size, FILE *stream);
 int is_valid_for_salt(char c);
 const char *crypt_algo(const char *in);
 
 /* functions */
-char *pwcrypt(char *buf, size_t buf_size, int confirm, const char *type,
-	      const char *algorithm, const char *user_salt,
-	      char *(*fgets_func)(char *buf, int size, FILE *in), FILE *in,
-	      FILE *out)
+int pwcrypt(int confirm, const char *type, const char *algorithm,
+	    const char *user_salt, FILE *out,
+	    char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty)
 {
 	/* The salt_buf_size is arbitrary, but user_salt may also contain
 	 * "rounds" or other data. From man crypt_r:
@@ -98,7 +96,7 @@ char *pwcrypt(char *buf, size_t buf_size, int confirm, const char *type,
 	char plaintext_passphrase2[plaintext_passphrase_size];
 
 	getpass(plaintext_passphrase, plaintext_passphrase2,
-		plaintext_passphrase_size, type, confirm, fgets_func, in, out);
+		plaintext_passphrase_size, type, confirm, fgets_func, tty);
 
 	char *encrypted = crypt_r(plaintext_passphrase, algo_salt, &data);
 	if (!encrypted) {
@@ -107,9 +105,9 @@ char *pwcrypt(char *buf, size_t buf_size, int confirm, const char *type,
 
 	memset(plaintext_passphrase, 0x00, plaintext_passphrase_size);
 
-	snprintf(buf, buf_size - 1, "%s", encrypted);
+	fprintf(out, "%s\n", encrypted);
 
-	return buf;
+	return 0;
 }
 
 char *fgets_no_echo(char *buf, int size, FILE *stream)
@@ -141,14 +139,12 @@ char *fgets_no_echo(char *buf, int size, FILE *stream)
 }
 
 void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm,
-	     char *(*fgets_func)(char *buf, int size, FILE *in), FILE *in,
-	     FILE *out)
+	     char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty)
 {
 	assert(buf);
 	assert(!confirm || buf2);
 	assert(size);
-	assert(in);
-	assert(out);
+	assert(tty);
 
 	if (!type) {
 		type = "";
@@ -158,32 +154,32 @@ void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm,
 	int diff = 0;
 	do {
 		if (diff) {
-			fprintf(out, "inputs did not match\n");
+			fprintf(tty, "inputs did not match\n");
 		}
-		fprintf(out, " input %s%spassphrase: ", type, space);
-		fflush(out);
-		char *r = fgets_func(buf, size, in);
+		fprintf(tty, " input %s%spassphrase: ", type, space);
+		fflush(tty);
+		char *r = fgets_func(buf, size, tty);
 		if (!r) {
 			err(EXIT_FAILURE,
-			    "fgets_func returned NULL reading buf of %zu",
+			    "fgets_no_echo returned NULL reading buf of %zu",
 			    size);
 		}
 		chomp_crlf(buf, size);
-		fprintf(out, "\n");
-		fflush(out);
+		fprintf(tty, "\n");
+		fflush(tty);
 
 		if (confirm) {
-			fprintf(out, "repeat %s%spassphrase: ", type, space);
-			fflush(out);
-			r = fgets_func(buf2, size, in);
+			fprintf(tty, "repeat %s%spassphrase: ", type, space);
+			fflush(tty);
+			r = fgets_func(buf2, size, tty);
 			if (!r) {
 				err(EXIT_FAILURE,
-				    "fgets_func returned NULL"
+				    "fgets_no_echo returned NULL"
 				    " reading buf of %zu?", size);
 			}
 			chomp_crlf(buf2, size);
-			fprintf(out, "\n");
-			fflush(out);
+			fprintf(tty, "\n");
+			fflush(tty);
 
 			diff = strncmp(buf, buf2, size);
 		}
@@ -270,30 +266,25 @@ int is_valid_for_salt(char c)
 	return 0;
 }
 
-void pwcrypt_parse_options(int *help, int *version, const char **type,
-			   const char **algorithm, const char **salt,
-			   int *no_confirm, int *use_stdin, int *echo_password,
-			   int argc, char **argv)
+void pwcrypt_parse_options(int *help, int *version, int *no_confirm,
+			   const char **type, const char **algorithm,
+			   const char **salt, int argc, char **argv)
 {
 	assert(help);
 	assert(version);
+	assert(no_confirm);
 	assert(type);
 	assert(algorithm);
 	assert(salt);
-	assert(no_confirm);
-	assert(use_stdin);
-	assert(echo_password);
 	assert(argc);
 	assert(argv);
 
 	/* omg, optstirng is horrible */
-	const char *optstring = "hvniet::a::s::";
+	const char *optstring = "hvnt::a::s::";
 	struct option long_options[] = {
 		{ "help", no_argument, 0, 'h' },
 		{ "version", no_argument, 0, 'v' },
 		{ "no-confirm", no_argument, 0, 'n' },
-		{ "use-stdin", no_argument, 0, 'i' },
-		{ "echo-password", no_argument, 0, 'e' },
 		{ "type", optional_argument, 0, 't' },
 		{ "algorithm", optional_argument, 0, 'a' },
 		{ "salt", optional_argument, 0, 's' },
@@ -319,12 +310,6 @@ void pwcrypt_parse_options(int *help, int *version, const char **type,
 			break;
 		case 'n':
 			*no_confirm = 1;
-			break;
-		case 'i':
-			*use_stdin = 1;
-			break;
-		case 'e':
-			*echo_password = 1;
 			break;
 		case 't':
 			*type = optarg;
@@ -354,26 +339,20 @@ void pwcrypt_help(FILE *out)
 	fprintf(out, "                               ");
 	fprintf(out, "   or other values supported by crypt_r(3).\n");
 
+	fprintf(out, "  -h, --help                   ");
+	fprintf(out, "   Prints this message and exits.\n");
+
+	fprintf(out, "  -n, --no-confirm                ");
+	fprintf(out, "   Do not prompt twice to enter the passphrase.\n");
+
 	fprintf(out, "  -s STRING, --salt=STRING     ");
 	fprintf(out, "   Use the STRING as the salt.\n");
 
 	fprintf(out, "  -t STRING, --type=STRING     ");
 	fprintf(out, "   Add the STRING to the prompt.\n");
 
-	fprintf(out, "  -n, --no-confirm             ");
-	fprintf(out, "   Do not prompt twice to enter the passphrase.\n");
-
-	fprintf(out, "  -i, --use-stdin              ");
-	fprintf(out, "   Use stdin,stdout instead of /dev/tty.\n");
-
-	fprintf(out, "  -e, --echo-password          ");
-	fprintf(out, "   Leave terminal echoing enabled.\n");
-
-	fprintf(out, "  -h, --help                   ");
-	fprintf(out, "   Print this message and exit.\n");
-
 	fprintf(out, "  -v, --version                ");
-	fprintf(out, "   Print the version (%s) and exit.\n",
+	fprintf(out, "   Prints the version (%s) and exits.\n",
 		pwcrypt_version_str);
 }
 
@@ -386,18 +365,13 @@ int pwcrypt_cli(int argc, char **argv, FILE *out)
 {
 	int help = 0;
 	int version = 0;
-
+	int no_confirm = 0;
 	const char *type = NULL;
 	const char *algorithm = NULL;
 	const char *salt = NULL;
 
-	int no_confirm = 0;
-	int use_stdin = 0;
-	int echo_password = 0;
-
-	pwcrypt_parse_options(&help, &version, &type, &algorithm, &salt,
-			      &no_confirm, &use_stdin, &echo_password, argc,
-			      argv);
+	pwcrypt_parse_options(&help, &version, &no_confirm, &type, &algorithm,
+			      &salt, argc, argv);
 
 	if (help) {
 		pwcrypt_help(out);
@@ -407,41 +381,18 @@ int pwcrypt_cli(int argc, char **argv, FILE *out)
 		pwcrypt_version(out);
 		return EXIT_SUCCESS;
 	}
-
-	FILE *tty = NULL;
-	FILE *prompt_in = NULL;
-	FILE *prompt_out = NULL;
-	if (use_stdin) {
-		prompt_in = stdin;
-		prompt_out = stdout;
-	} else {
-		tty = fopen("/dev/tty", "r+");
-		if (!tty) {
-			err(EXIT_FAILURE, "fopen(/dev/tty, r+) failed");
-		}
-		prompt_in = tty;
-		prompt_out = tty;
+	FILE *tty = fopen("/dev/tty", "r+");
+	if (!tty) {
+		err(EXIT_FAILURE, "fopen(/dev/tty, r+) failed");
 	}
 
-	const size_t buf_size = 512;
-	char buf[buf_size];
-	memset(buf, 0x00, buf_size);
 	int confirm = no_confirm ? 0 : 1;
-	char *rv = pwcrypt(buf, buf_size, confirm, type, algorithm, salt,
-			   echo_password ? fgets : fgets_no_echo, prompt_in,
-			   prompt_out);
+	int rv = pwcrypt(confirm, type, algorithm, salt, out,
+			 fgets_no_echo, tty);
 
-	if (tty) {
-		fclose(tty);
-	}
+	fclose(tty);
 
-	if (!rv) {
-		return EXIT_FAILURE;
-	}
-
-	fprintf(out, "%s\n", buf);
-
-	return 0;
+	return rv;
 }
 
 #ifndef PWCRYPT_TEST
