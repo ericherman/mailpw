@@ -48,12 +48,13 @@ check-unit: check-crypt-algo \
 		check-is-valid-for-salt
 	@echo "SUCCESS! ($@)"
 
-check-acceptance-sha512: pwcrypt tests/pwcrypt-expect.sh tests/faux-shadow
-	tests/pwcrypt-expect.sh alice foo | grep OK
+check-acceptance-sha512: ./tests/check-sha512 tests/expect-no-confirm.sh \
+		pwcrypt
+	./tests/check-sha512
 	@echo "SUCCESS! ($@)"
 
-check-acceptance-md5: pwcrypt tests/pwcrypt-expect.sh tests/faux-shadow
-	tests/pwcrypt-expect.sh bob bar | grep OK
+check-acceptance-md5: ./tests/check-md5 tests/expect-confirm.sh pwcrypt
+	./tests/check-md5
 	@echo "SUCCESS! ($@)"
 
 check-acceptance: check-acceptance-md5 check-acceptance-sha512
