@@ -66,7 +66,7 @@ check: check-unit check-acceptance
 # extracted from https://github.com/torvalds/linux/blob/master/scripts/Lindent
 LINDENT=indent -npro -kr -i8 -ts8 -sob -l80 -ss -ncs -cp1 -il0
 # see also: https://www.kernel.org/doc/Documentation/process/coding-style.rst
-tidy:
+tidy-c:
 	$(LINDENT) \
 		-T FILE \
 		-T size_t -T ssize_t \
@@ -74,6 +74,18 @@ tidy:
 		-T termios \
 		tests/*.h tests/*.c \
 		pwcrypt.c
+
+PERL_SRC=mailpw tests/check-md5 tests/check-sha512
+tidy-perl:
+	#TODO: replace for-loop with Makefile magic
+	for FILE in $(PERL_SRC); do \
+		perl -c $$FILE \
+			&& perltidy $$FILE \
+			&& mv $$FILE $$FILE~ \
+			&& mv $$FILE.tdy $$FILE; \
+	done
+
+tidy: tidy-c tidy-perl
 
 clean:
 	rm -fv `cat .gitignore`
