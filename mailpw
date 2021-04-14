@@ -43,27 +43,37 @@ sub change_instance_passwds {
     print "password: '$password'\n";
 }
 
-# get $USER
-my $whoami = `/bin/who am i`;
-( my $user = $whoami ) =~ s/\s.*//;
-chomp($user);
+sub main {
 
-# list of instances (tdf, keithr, logicgate)
-# locate 2 files:
-#  * location of the smtpd passwd file
-#  * location of the dovcot passwd file
-# TODO: read this from a file
-#  * make a test file with known values
-#  * write perl tests
-#    * pass in $pwcrypt of "./crypt --use-stdin --salt=12345"
-#    * (thus modify pwcrypt to take --use-stdin)
-#    * (consider changing --confirm to --no-confirm)
-my $instances = {
-    tdf    => [ '/our/tdf/dovecot/passwd',    '/our/tdf/opensmtpd/users' ],
-    keithr => [ '/our/keithr/dovecot/passwd', '/our/keithr/opensmtpd/users' ],
-};
+    # get $USER
+    my $whoami = `/bin/who am i`;
+    ( my $user = $whoami ) =~ s/\s.*//;
+    chomp($user);
 
-# prompt for password
-# change passwd in appropriate files
-# signal services?
-change_instance_passwds( $user, $instances );
+    # list of instances (tdf, keithr, logicgate)
+    # locate 2 files:
+    #  * location of the smtpd passwd file
+    #  * location of the dovcot passwd file
+    # TODO: read this from a file
+    #  * make a test file with known values
+    #  * write perl tests
+    #    * pass in $pwcrypt of "./crypt --use-stdin --salt=12345"
+    #    * (thus modify pwcrypt to take --use-stdin)
+    #    * (consider changing --confirm to --no-confirm)
+    my $instances = {
+        tdf    => [ '/our/tdf/dovecot/passwd', '/our/tdf/opensmtpd/users' ],
+        keithr =>
+          [ '/our/keithr/dovecot/passwd', '/our/keithr/opensmtpd/users' ],
+    };
+
+    # prompt for password
+    # change passwd in appropriate files
+    # signal services?
+    change_instance_passwds( $user, $instances );
+}
+
+# Call main() with commandline arguments unless loaded as a module.
+# see "perldoc -f caller"
+# @ARGV is similar to C's argv, except that the @ARGV of Perl does
+# not contain the name of the program (that is the $0 variable).
+main(@ARGV) unless caller();
