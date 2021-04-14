@@ -1,4 +1,7 @@
 #!/usr/bin/env perl
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2021 Eric Herman <eric@freesa.org>
+# Copyright (C) 2021 Keith Reynolds <keithr@pwcrypt.keithr.com>
 use strict;
 use warnings;
 
@@ -43,12 +46,16 @@ sub change_instance_passwds {
     print "password: '$password'\n";
 }
 
-sub main {
-
-    # get $USER
+sub who_am_i {
     my $whoami = `/bin/who am i`;
     ( my $user = $whoami ) =~ s/\s.*//;
     chomp($user);
+    return $user;
+}
+
+sub main {
+
+    my $user = who_am_i();
 
     # list of instances (tdf, keithr, logicgate)
     # locate 2 files:

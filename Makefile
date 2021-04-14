@@ -43,9 +43,19 @@ check-is-valid-for-salt: test-is-valid-for-salt
 	./test-is-valid-for-salt
 	@echo "SUCCESS! ($@)"
 
+check-mailpw-who-am-i: tests/test-mailpw-who-am-i.pl mailpw
+	perl tests/test-mailpw-who-am-i.pl
+	@echo "SUCCESS! ($@)"
+
+check-mailpw-who-am-i-false-env: tests/test-mailpw-who-am-i.pl mailpw
+	USER=foo perl tests/test-mailpw-who-am-i.pl $(USER)
+	@echo "SUCCESS! ($@)"
+
 check-unit: check-crypt-algo \
 		check-getpass \
-		check-is-valid-for-salt
+		check-is-valid-for-salt \
+		check-mailpw-who-am-i \
+		check-mailpw-who-am-i-false-env
 	@echo "SUCCESS! ($@)"
 
 check-acceptance-sha512: ./tests/check-sha512 tests/expect-no-confirm.sh \
@@ -75,7 +85,11 @@ tidy-c:
 		tests/*.h tests/*.c \
 		pwcrypt.c
 
-PERL_SRC=mailpw tests/check-md5 tests/check-sha512
+PERL_SRC=mailpw \
+	tests/check-md5 \
+	tests/check-sha512 \
+	tests/*.pl
+
 tidy-perl:
 	#TODO: replace for-loop with Makefile magic
 	for FILE in $(PERL_SRC); do \
