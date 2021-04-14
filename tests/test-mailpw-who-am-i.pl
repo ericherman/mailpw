@@ -8,11 +8,7 @@ use Test;
 BEGIN { plan tests => 1 }
 
 # Load the functions in mailpw
-# (There is probably a better way to do this)
-open my $fh, '<', './mailpw' or die "Can't open file $!";
-my $mailpw = do { local $/; <$fh> };
-close $fh;
-eval $mailpw;
+do './mailpw';
 
 # get the expected answer
 my $expected = $ARGV[0];
