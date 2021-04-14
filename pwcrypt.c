@@ -54,8 +54,8 @@ int is_valid_for_salt(char c);
 const char *crypt_algo(const char *in);
 
 /* functions */
-int pwcrypt(int confirm, const char *type, const char *algorithm,
-	    const char *user_salt, FILE *out,
+int pwcrypt(FILE *out, int confirm, const char *type,
+	    const char *algorithm, const char *user_salt,
 	    char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty)
 {
 	/* The salt_buf_size is arbitrary, but user_salt may also contain
@@ -387,7 +387,7 @@ int pwcrypt_cli(int argc, char **argv, FILE *out)
 	}
 
 	int confirm = no_confirm ? 0 : 1;
-	int rv = pwcrypt(confirm, type, algorithm, salt, out,
+	int rv = pwcrypt(out, confirm, type, algorithm, salt,
 			 fgets_no_echo, tty);
 
 	fclose(tty);
