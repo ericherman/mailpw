@@ -12,6 +12,7 @@
 # patsubst : $(patsubst pattern,replacement,text)
 #       https://www.gnu.org/software/make/manual/html_node/Text-Functions.html
 
+PERL ?= perl
 
 PWC_CFLAGS=-g -Wall -Wextra -Wpedantic -Werror
 PWC_LDADD=-lcrypt
@@ -43,29 +44,59 @@ check-is-valid-for-salt: test-is-valid-for-salt
 	./test-is-valid-for-salt
 	@echo "SUCCESS! ($@)"
 
+check-mailpw-ensure-filename: tests/test-mailpw-ensure-filename.pl mailpw
+	$(PERL) tests/test-mailpw-ensure-filename.pl
+	@echo "SUCCESS! ($@)"
+
+check-mailpw-get-instances: tests/test-mailpw-get-instances.pl mailpw
+	$(PERL) tests/test-mailpw-get-instances.pl
+	@echo "SUCCESS! ($@)"
+
 check-mailpw-who-am-i: tests/test-mailpw-who-am-i.pl mailpw
-	perl tests/test-mailpw-who-am-i.pl
+	$(PERL) tests/test-mailpw-who-am-i.pl
 	@echo "SUCCESS! ($@)"
 
 check-mailpw-who-am-i-false-env: tests/test-mailpw-who-am-i.pl mailpw
-	USER=foo perl tests/test-mailpw-who-am-i.pl $(USER)
+	USER=foo $(PERL) tests/test-mailpw-who-am-i.pl $(USER)
+	@echo "SUCCESS! ($@)"
+
+check-mailpw-replace-hash: tests/test-mailpw-replace-hash.pl mailpw
+	$(PERL) tests/test-mailpw-replace-hash.pl
+	@echo "SUCCESS! ($@)"
+
+check-mailpw-change-passwd: tests/test-mailpw-change-passwd.pl mailpw pwcrypt
+	$(PERL) tests/test-mailpw-change-passwd.pl
 	@echo "SUCCESS! ($@)"
 
 check-unit: check-crypt-algo \
 		check-getpass \
 		check-is-valid-for-salt \
+		check-mailpw-ensure-filename \
+		check-mailpw-get-instances \
 		check-mailpw-who-am-i \
-		check-mailpw-who-am-i-false-env
+		check-mailpw-who-am-i-false-env \
+		check-mailpw-replace-hash \
+		check-mailpw-change-passwd
 	@echo "SUCCESS! ($@)"
 
 check-acceptance-sha512: ./tests/check-sha512 tests/expect-no-confirm.sh \
 		pwcrypt
-	./tests/check-sha512
+	$(PERL) ./tests/check-sha512
 	@echo "SUCCESS! ($@)"
 
 check-acceptance-md5: ./tests/check-md5 tests/expect-confirm.sh pwcrypt
-	./tests/check-md5
+	$(PERL) ./tests/check-md5
 	@echo "SUCCESS! ($@)"
+
+# TODO:
+# check-acceptance-mailpw: mailpw pwcrypt
+#	mkdir -pv faux
+#	cp -iv tests/faux-passwd faux/dovecot-passwd
+#	cp -iv tests/faux-space faux/opensmtpd-users
+#	sed -i -e "s/USER/$$USER/g" faux/*
+#	# ./pwcrypt tests/faux-mailpw.conf
+#	expect-mailpw tests/faux-mailpw.conf \
+#		pinch.of.salt 'Ever expanding cirlcles of love!'
 
 check-acceptance: check-acceptance-md5 check-acceptance-sha512
 	@echo "SUCCESS! ($@)"
@@ -93,7 +124,7 @@ PERL_SRC=mailpw \
 tidy-perl:
 	#TODO: replace for-loop with Makefile magic
 	for FILE in $(PERL_SRC); do \
-		perl -c $$FILE \
+		$(PERL) -c $$FILE \
 			&& perltidy $$FILE \
 			&& mv $$FILE $$FILE~ \
 			&& mv $$FILE.tdy $$FILE; \
