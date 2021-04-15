@@ -11,7 +11,7 @@ my $pw     = 'foo';
 my $hash =
 '$6$9bNjt4P8TLP6IWL1$pwlTVnveoApfAlgLE5N0drY5Ujx8yCcV3vay0/clcSqP6Ft5Idd0sfO30Q/aZhPhSXt8gqY4uCjaIiBiV61Vo0';
 
-my $output = `tests/expect-no-confirm.sh $pwtype sha512 $salt $pw`;
+my $output = `tests/expect-no-confirm $pwtype sha512 $salt $pw`;
 
 my $prompt = "$pwtype passphrase: ";
 die "prompt '$prompt' missing" unless ( $output =~ "$prompt" );

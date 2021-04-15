@@ -79,12 +79,12 @@ check-unit: check-crypt-algo \
 		check-mailpw-change-passwd
 	@echo "SUCCESS! ($@)"
 
-check-acceptance-sha512: ./tests/check-sha512 tests/expect-no-confirm.sh \
+check-acceptance-sha512: ./tests/check-sha512 tests/expect-no-confirm \
 		pwcrypt
 	$(PERL) ./tests/check-sha512
 	@echo "SUCCESS! ($@)"
 
-check-acceptance-md5: ./tests/check-md5 tests/expect-confirm.sh pwcrypt
+check-acceptance-md5: ./tests/check-md5 tests/expect-confirm pwcrypt
 	$(PERL) ./tests/check-md5
 	@echo "SUCCESS! ($@)"
 

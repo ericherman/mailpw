@@ -126,7 +126,7 @@ ok( file_contains( $bar_sp_fname,  "margaret $margaret_hash" ) );
 my $outstr = '';
 open( my $fakeout, '>', \$outstr ) or die "Can't open local string? $!";
 
-my $pwcrypt_cmd = "tests/expect-no-confirm.sh email sha512 $salt '$newpw'";
+my $pwcrypt_cmd = "tests/expect-no-confirm email sha512 $salt '$newpw'";
 change_instance_passwds( $fakeout, 'brian', $instances, $pwcrypt_cmd );
 close($fakeout);
 

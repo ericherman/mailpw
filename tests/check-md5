@@ -11,7 +11,7 @@ my $pw     = 'bar';
 my $algo   = '1';
 my $hash   = '$1$I.amFrij$h8Orif34zr5liFE1ck9Js/';
 
-my $output = `tests/expect-confirm.sh $pwtype $algo $salt $pw`;
+my $output = `tests/expect-confirm $pwtype $algo $salt $pw`;
 
 my $prompt = "$pwtype passphrase: ";
 die "prompt '$prompt' missing" unless ( $output =~ "$prompt" );
