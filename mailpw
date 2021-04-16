@@ -85,24 +85,20 @@ sub replace_hash {
 }
 
 sub who_am_i {
-    my $warned = 0;
     my $whoami = `/usr/bin/whoami`;
     my $user   = trim($whoami);
-    $user = trim($whoami);
     if ( !$user ) {
         warn("`/usr/bin/whoami` == '$whoami'");
-        ++$warned;
-        $whoami = `/usr/bin/who am i`;
-        ($user) = split( /\s*/, $whoami );
+
+        my $who_am_i = `/usr/bin/who am i`;
+        ($user) = split( /\s*/, $who_am_i );
         if ( !$user ) {
-            warn("who am i? `/usr/bin/who am i` == '$whoami'");
-            ++$warned;
-            $user = $ENV{USER};
-            warn("WARN using \$USER of '$user'");
+            warn("who am i? `/usr/bin/who am i` == '$who_am_i'");
         }
     }
-    if ($warned) {
-        warn("{ user => '$user' }");
+    if ( !$user ) {
+        warn("\$ENV{USER} == $ENV{USER} (this is not reliable)");
+        die("Can not establish user");
     }
     return $user;
 }
