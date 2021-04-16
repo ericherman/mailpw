@@ -42,7 +42,7 @@
 #define CRYPT_SHA256 "5"
 #define CRYPT_SHA512 "6"
 
-const char *pwcrypt_version_str = "0.0.1";
+const char *pwcrypt_version_str = "1.0.0";
 
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);

@@ -8,7 +8,11 @@ use warnings;
 use File::Copy;
 
 sub change_instance_passwds {
-    my ( $out, $user, $instances, $pwcrypt) = @_;
+    my $out       = shift;
+    my $user      = shift;
+    my $instances = shift;
+
+    my $pwcrypt = scalar(@_) ? join( ' ', @_ ) : 'pwcrypt --type=mail';
 
     my %user_instances;
 
@@ -75,15 +79,31 @@ sub replace_hash {
     my ( $data, $user, $delim, $new_hash ) = @_;
 
     #TODO: use a capture group
-    my $sep = $delim eq '\s' ? ' ' : $delim;
+    my $sep      = $delim eq '\s' ? ' ' : $delim;
     my $replaced = ( $data =~ s/$user$delim[^$delim]+/$user$sep$new_hash/r );
     return $replaced;
 }
 
 sub who_am_i {
-    my $whoami = `/bin/who am i`;
-    ( my $user = $whoami ) =~ s/\s.*//;
-    chomp($user);
+    my $warned = 0;
+    my $whoami = `/usr/bin/whoami`;
+    my $user   = trim($whoami);
+    $user = trim($whoami);
+    if ( !$user ) {
+        warn("`/usr/bin/whoami` == '$whoami'");
+        ++$warned;
+        $whoami = `/usr/bin/who am i`;
+        ($user) = split( /\s*/, $whoami );
+        if ( !$user ) {
+            warn("who am i? `/usr/bin/who am i` == '$whoami'");
+            ++$warned;
+            $user = $ENV{USER};
+            warn("WARN using \$USER of '$user'");
+        }
+    }
+    if ($warned) {
+        warn("{ user => '$user' }");
+    }
     return $user;
 }
 
@@ -92,7 +112,7 @@ sub default_config_filename {
 }
 
 sub ensure_filename {
-    my ( $filename, $env ) = @_;
+    my ($filename) = @_;
     $filename ||= default_config_filename();
     return $filename;
 }
@@ -123,26 +143,19 @@ sub get_instances {
 
 sub mailpw {
 
-    my ( $argv, $env ) = @_;
+    my $filename = shift;
 
-    my $filename = ensure_filename( $argv->[0], $env );
+    $filename = ensure_filename($filename);
 
     my $instances = get_instances($filename);
 
     my $user = who_am_i();
 
-    my $pwcrypt = './pwcrypt --type=mail';
-
-    if (scalar(@$argv) > 1) {
-	my $salt = $argv->[1];
-	$pwcrypt .= " --salt=$salt"
-    }
-
-    change_instance_passwds( STDOUT, $user, $instances, $pwcrypt );
+    change_instance_passwds( *STDOUT, $user, $instances, @_ );
 }
 
 # Call mailpw() with commandline arguments unless loaded as a module.
 # see "perldoc -f caller"
 # @ARGV is similar to C's argv, except that the @ARGV of Perl does
 # not contain the name of the program (that is the $0 variable).
-mailpw( \@ARGV, \%ENV ) unless caller();
+mailpw(@ARGV) unless caller();

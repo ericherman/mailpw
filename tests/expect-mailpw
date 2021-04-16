@@ -1,0 +1,12 @@
+#!/usr/bin/expect
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2021 Eric Herman <eric@freesa.org>
+set conf [lindex $argv 0]
+set salt [lindex $argv 1]
+set pass [lindex $argv 2]
+spawn ./mailpw $conf ./pwcrypt --salt=$salt
+expect "passphrase: "
+send -- "$pass\r"
+expect "passphrase: "
+send -- "$pass\r"
+expect eof

@@ -13,6 +13,7 @@
 #       https://www.gnu.org/software/make/manual/html_node/Text-Functions.html
 
 PERL ?= perl
+SHELL = /bin/bash
 
 PWC_CFLAGS=-g -Wall -Wextra -Wpedantic -Werror
 PWC_LDADD=-lcrypt
@@ -88,17 +89,36 @@ check-acceptance-md5: ./tests/check-md5 tests/expect-confirm pwcrypt
 	$(PERL) ./tests/check-md5
 	@echo "SUCCESS! ($@)"
 
-# TODO:
-# check-acceptance-mailpw: mailpw pwcrypt
-#	mkdir -pv faux
-#	cp -iv tests/faux-passwd faux/dovecot-passwd
-#	cp -iv tests/faux-space faux/opensmtpd-users
-#	sed -i -e "s/USER/$$USER/g" faux/*
-#	# ./pwcrypt tests/faux-mailpw.conf
-#	expect-mailpw tests/faux-mailpw.conf \
-#		pinch.of.salt 'Ever expanding cirlcles of love!'
+check-acceptance-mailpw: tests/expect-mailpw mailpw pwcrypt \
+		tests/faux/faux-mailpw.conf \
+		tests/faux/bar/dovecot-passwd \
+		tests/faux/bar/dovecot-passwd.expected \
+		tests/faux/bar/opensmtpd-users \
+		tests/faux/bar/opensmtpd-users.expected \
+		tests/faux/baz/dovecot-passwd \
+		tests/faux/baz/dovecot-passwd.expected \
+		tests/faux/baz/opensmtpd-users \
+		tests/faux/baz/opensmtpd-users.expected \
+		tests/faux/foo/dovecot-passwd \
+		tests/faux/foo/dovecot-passwd.expected \
+		tests/faux/foo/opensmtpd-users \
+		tests/faux/foo/opensmtpd-users.expected
+	rm -rfv faux
+	cp -irv tests/faux .
+	sed -i -e "s/USER/$$USER/g" faux/foo/* faux/bar/* faux/baz/*
+	tests/expect-mailpw tests/faux/faux-mailpw.conf \
+		pinch.of.salt Ever.expanding.circles.of.love
+	diff -u faux/baz/opensmtpd-users faux/baz/opensmtpd-users.expected
+	diff -u faux/baz/dovecot-passwd faux/baz/dovecot-passwd.expected
+	diff -u faux/foo/opensmtpd-users faux/foo/opensmtpd-users.expected
+	diff -u faux/foo/dovecot-passwd faux/foo/dovecot-passwd.expected
+	diff -u faux/bar/opensmtpd-users faux/bar/opensmtpd-users.expected
+	diff -u faux/bar/dovecot-passwd faux/bar/dovecot-passwd.expected
+	@echo "SUCCESS! ($@)"
 
-check-acceptance: check-acceptance-md5 check-acceptance-sha512
+check-acceptance: check-acceptance-md5 \
+		check-acceptance-sha512 \
+		check-acceptance-mailpw
 	@echo "SUCCESS! ($@)"
 
 check: check-unit check-acceptance
@@ -133,4 +153,6 @@ tidy-perl:
 tidy: tidy-c tidy-perl
 
 clean:
+	rm -rfv faux
 	rm -fv `cat .gitignore`
+	pushd tests; rm -fv `cat ../.gitignore`; popd
