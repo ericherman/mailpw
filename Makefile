@@ -45,10 +45,6 @@ check-is-valid-for-salt: test-is-valid-for-salt
 	./test-is-valid-for-salt
 	@echo "SUCCESS! ($@)"
 
-check-mailpw-ensure-filename: tests/test-mailpw-ensure-filename.pl mailpw
-	$(PERL) tests/test-mailpw-ensure-filename.pl
-	@echo "SUCCESS! ($@)"
-
 check-mailpw-get-instances: tests/test-mailpw-get-instances.pl mailpw
 	$(PERL) tests/test-mailpw-get-instances.pl
 	@echo "SUCCESS! ($@)"
@@ -72,7 +68,6 @@ check-mailpw-change-passwd: tests/test-mailpw-change-passwd.pl mailpw pwcrypt
 check-unit: check-crypt-algo \
 		check-getpass \
 		check-is-valid-for-salt \
-		check-mailpw-ensure-filename \
 		check-mailpw-get-instances \
 		check-mailpw-who-am-i \
 		check-mailpw-who-am-i-false-env \
