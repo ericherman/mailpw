@@ -21,12 +21,14 @@ exit( mailpw(@ARGV) ) unless caller();
 sub mailpw {
 
     my $mailpw_conf_path = shift;
-
     $mailpw_conf_path ||= default_config_path();
 
     my $user = who_am_i();
 
-    my $instances = get_instances($mailpw_conf_path);
+    open( my $fh, '<', $mailpw_conf_path )
+      or die "Could not open file '$mailpw_conf_path' $! $?";
+    my $instances = parse_mailpw_config($fh);
+    close($fh);
 
     change_instance_passwds( *STDOUT, $user, $instances, @_ );
 
@@ -56,11 +58,9 @@ sub who_am_i {
     return $user;
 }
 
-sub get_instances {
-    my ($filename) = @_;
-
-    open( my $fh, '<', $filename )
-      or die "Could not open file '$filename' $! $?";
+# pass in a an open file handle to the mailpw.conf
+sub parse_mailpw_config {
+    my ($fh) = @_;
 
     my $instances = {};
     while ( my $line = <$fh> ) {
@@ -75,7 +75,6 @@ sub get_instances {
 
         $instances->{$group}->{$path} = $type;
     }
-    close($fh);
 
     return $instances;
 }

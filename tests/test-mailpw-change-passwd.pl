@@ -90,7 +90,10 @@ bar\tspace\t$bar_sp_fname
 EOF
 close($conf_fh);
 
-my $instances = get_instances($conf_fname);
+open( $conf_fh, '<', $conf_fname )
+  or die "Could not open file '$conf_fname' $! $?";
+my $instances = parse_mailpw_config($conf_fh);
+close($conf_fh);
 
 ok( scalar( keys %$instances ) == 2 );
 
