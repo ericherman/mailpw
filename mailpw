@@ -7,6 +7,79 @@ use warnings;
 
 use File::Copy;
 
+# Call mailpw() with commandline arguments unless loaded as a module.
+# see "perldoc -f caller"
+# @ARGV is similar to C's argv, except that the @ARGV of Perl does
+# not contain the name of the program (that is the $0 variable).
+exit( mailpw(@ARGV) ) unless caller();
+
+# The first argument in the path to the config file used to find
+# the files to be modified.
+# If additional arguments are passed, these will be used as the
+# command to generate the passphrase hash. Otherwise, the default
+# behavior is to call "pwcrypt".
+sub mailpw {
+
+    my $mailpw_conf_path = shift;
+
+    $mailpw_conf_path ||= default_config_path();
+
+    my $user = who_am_i();
+
+    my $instances = get_instances($mailpw_conf_path);
+
+    change_instance_passwds( *STDOUT, $user, $instances, @_ );
+
+    return 0;
+}
+
+sub default_config_path {
+    return '/etc/mailpw.conf';
+}
+
+sub who_am_i {
+    my $whoami = `/usr/bin/whoami`;
+    my $user   = trim($whoami);
+    if ( !$user ) {
+        warn("`/usr/bin/whoami` == '$whoami'");
+
+        my $who_am_i = `/usr/bin/who am i`;
+        ($user) = split( /\s*/, $who_am_i );
+        if ( !$user ) {
+            warn("who am i? `/usr/bin/who am i` == '$who_am_i'");
+        }
+    }
+    if ( !$user ) {
+        warn("\$ENV{USER} == $ENV{USER} (this is not reliable)");
+        die("Can not establish user");
+    }
+    return $user;
+}
+
+sub get_instances {
+    my ($filename) = @_;
+
+    open( my $fh, '<', $filename )
+      or die "Could not open file '$filename' $! $?";
+
+    my $instances = {};
+    while ( my $line = <$fh> ) {
+
+        # skip comments and empty lines
+        if ( ( $line =~ /^\s*#/ ) || ( $line =~ /^\s*$/ ) ) {
+            next;    # The "next" command is like "continue" in C
+        }
+
+        my ( $group, $type, $path ) = split( /\s/, $line );
+        die("bad line: '$line'\n") unless ( $group || $type || $path );
+
+        $instances->{$group}->{$path} = $type;
+    }
+    close($fh);
+
+    return $instances;
+}
+
 sub change_instance_passwds {
     my $out       = shift;
     my $user      = shift;
@@ -67,12 +140,6 @@ sub change_instance_passwds {
     }
 }
 
-sub trim {
-    my ($s) = @_;
-    $s =~ s/^\s+|\s+$//g;
-    return $s;
-}
-
 # we don't know the old hash, so replace the
 # user, delim, everthing until the next delim with user, delim, new hash
 sub replace_hash {
@@ -84,74 +151,8 @@ sub replace_hash {
     return $replaced;
 }
 
-sub who_am_i {
-    my $whoami = `/usr/bin/whoami`;
-    my $user   = trim($whoami);
-    if ( !$user ) {
-        warn("`/usr/bin/whoami` == '$whoami'");
-
-        my $who_am_i = `/usr/bin/who am i`;
-        ($user) = split( /\s*/, $who_am_i );
-        if ( !$user ) {
-            warn("who am i? `/usr/bin/who am i` == '$who_am_i'");
-        }
-    }
-    if ( !$user ) {
-        warn("\$ENV{USER} == $ENV{USER} (this is not reliable)");
-        die("Can not establish user");
-    }
-    return $user;
+sub trim {
+    my ($s) = @_;
+    $s =~ s/^\s+|\s+$//g;
+    return $s;
 }
-
-sub default_config_filename {
-    return '/etc/mailpw.conf';
-}
-
-sub ensure_filename {
-    my ($filename) = @_;
-    $filename ||= default_config_filename();
-    return $filename;
-}
-
-sub get_instances {
-    my ($filename) = @_;
-
-    open( my $fh, '<', $filename )
-      or die "Could not open file '$filename' $! $?";
-
-    my $instances = {};
-    while ( my $line = <$fh> ) {
-
-        # skip comments and empty lines
-        if ( ( $line =~ /^\s*#/ ) || ( $line =~ /^\s*$/ ) ) {
-            next;    # The "next" command is like "continue" in C
-        }
-
-        my ( $group, $type, $path ) = split( /\s/, $line );
-        die("bad line: '$line'\n") unless ( $group || $type || $path );
-
-        $instances->{$group}->{$path} = $type;
-    }
-    close($fh);
-
-    return $instances;
-}
-
-sub mailpw {
-
-    my $filename = shift;
-
-    $filename = ensure_filename($filename);
-
-    my $instances = get_instances($filename);
-
-    my $user = who_am_i();
-
-    change_instance_passwds( *STDOUT, $user, $instances, @_ );
-}
-
-# Call mailpw() with commandline arguments unless loaded as a module.
-# see "perldoc -f caller"
-# @ARGV is similar to C's argv, except that the @ARGV of Perl does
-# not contain the name of the program (that is the $0 variable).
-mailpw(@ARGV) unless caller();
