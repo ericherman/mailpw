@@ -84,41 +84,27 @@ sub change_instance_passwds {
     my $user      = shift;
     my $instances = shift;
 
-    my $pwcrypt = scalar(@_) ? join( ' ', @_ ) : 'pwcrypt --type=mail';
+    my $pwcrypt_cmd = scalar(@_) ? join( ' ', @_ ) : 'pwcrypt --type=mail';
 
-    my %user_instances;
+    my $user_instances = find_instances_for_user( $user, $instances );
 
-    foreach my $instance ( keys %{$instances} ) {
-        foreach my $pwfile ( keys %{ $instances->{$instance} } ) {
-            my $type  = $instances->{$instance}->{$pwfile};
-            my $delim = $type eq 'passwd' ? ':' : '\s';
-            open( my $pwin, '<', $pwfile ) or die "$pwfile: $!";
-            while (<$pwin>) {
-                if (/^${user}${delim}/) {
-                    push @{ $user_instances{$instance} }, $pwfile;
-                }
-            }
-            close($pwin);
-        }
-    }
-
-    foreach my $instance ( keys(%user_instances) ) {
+    foreach my $instance (@$user_instances) {
         print $out "$user has a password in $instance\n";
     }
 
     my @instances_to_change;
-    if ( scalar( keys(%user_instances) ) > 1 ) {
+    if ( scalar(@$user_instances) > 1 ) {
 
         # TODO: prompt for which ones
         # found in more than 1 instance prompt for instance,
         #   e.g.: "tdf, logicgate, all?"
-        push @instances_to_change, keys(%user_instances);
+        push( @instances_to_change, @$user_instances );
     }
     else {
-        push @instances_to_change, keys(%user_instances);
+        push( @instances_to_change, @$user_instances );
     }
 
-    my $hash = trim(`$pwcrypt | tail -n1`);
+    my $hash = trim(`$pwcrypt_cmd | tail -n1`);
 
     foreach my $instance (@instances_to_change) {
         foreach my $pwfile ( keys %{ $instances->{$instance} } ) {
@@ -137,6 +123,26 @@ sub change_instance_passwds {
             copy( "$pwfile.next", $pwfile )        or die $!;
         }
     }
+}
+
+# find the instances which have files which contain this user
+sub find_instances_for_user {
+    my ( $user, $instances ) = @_;
+    my $user_instances = {};
+    foreach my $instance ( keys %{$instances} ) {
+        foreach my $pwfile ( keys %{ $instances->{$instance} } ) {
+            my $type  = $instances->{$instance}->{$pwfile};
+            my $delim = $type eq 'passwd' ? ':' : '\s';
+            open( my $pwin, '<', $pwfile ) or die "$pwfile: $!";
+            while (<$pwin>) {
+                if (/^${user}${delim}/) {
+                    push @{ $user_instances->{$instance} }, $pwfile;
+                }
+            }
+            close($pwin);
+        }
+    }
+    return [ keys %$user_instances ];
 }
 
 # we don't know the old hash, so replace the
