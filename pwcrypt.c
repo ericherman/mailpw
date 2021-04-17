@@ -31,8 +31,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/random.h>
 #include <termios.h>
+#include <unistd.h>
 #include <getopt.h>
 
 /* see the "Notes" section of "man 3 crypt" for glibc crypt_r
@@ -52,6 +54,8 @@ void getrandom_salt(char *buf, size_t size);
 char *fgets_no_echo(char *buf, int size, FILE *stream);
 int is_valid_for_salt(char c);
 const char *crypt_algo(const char *in);
+void *alloc_madvised_or_die(size_t *memory_size, unsigned pages);
+void free_madvised(void *memory, size_t memory_size);
 
 /* functions */
 int pwcrypt(FILE *out, int confirm, const char *type,
@@ -90,24 +94,63 @@ int pwcrypt(FILE *out, int confirm, const char *type,
 	/* data->initialized = 0; */
 	memset(&data, 0x00, sizeof(struct crypt_data));
 
-	// TODO: use madvise with MADV_DONTDUMP, MADV_WIPEONFORK
-	const size_t plaintext_passphrase_size = 1024;
-	char plaintext_passphrase[plaintext_passphrase_size];
-	char plaintext_passphrase2[plaintext_passphrase_size];
+	size_t memory_size = 0;
+	unsigned pages = 1;
+	void *memory = alloc_madvised_or_die(&memory_size, pages);
+	assert(memory_size);
+
+	const size_t plaintext_passphrase_size = memory_size / 2;
+	char *plaintext_passphrase = memory;
+	char *plaintext_passphrase2 =
+	    plaintext_passphrase + plaintext_passphrase_size;
 
 	getpw(plaintext_passphrase, plaintext_passphrase2,
 	      plaintext_passphrase_size, type, confirm, fgets_func, tty);
 
 	char *encrypted = crypt_r(plaintext_passphrase, algo_salt, &data);
+
+	plaintext_passphrase = NULL;
+	plaintext_passphrase2 = NULL;
+	free_madvised(memory, memory_size);
+
 	if (!encrypted) {
 		err(EXIT_FAILURE, "crypt_r failed");
 	}
 
-	memset(plaintext_passphrase, 0x00, plaintext_passphrase_size);
-
 	fprintf(out, "%s\n", encrypted);
 
 	return 0;
+}
+
+void *alloc_madvised_or_die(size_t *memory_size, unsigned pages)
+{
+	void *addr = NULL;
+	const size_t page_size = sysconf(_SC_PAGESIZE);
+	const int prot = PROT_READ | PROT_WRITE;
+	const int flags = MAP_PRIVATE | MAP_ANONYMOUS;
+	const int fd = -1;
+	const int offset = 0;
+
+	*memory_size = pages * page_size;
+
+	void *memory = mmap(addr, *memory_size, prot, flags, fd, offset);
+	if (!memory) {
+		err(EXIT_FAILURE, "mmap failed %zu", *memory_size);
+	}
+
+	const int advice = MADV_DONTDUMP | MADV_WIPEONFORK;
+	if (madvise(memory, *memory_size, advice)) {
+		err(EXIT_FAILURE, "madvise failed");
+	}
+
+	memset(memory, 0x00, *memory_size);
+	return memory;
+}
+
+void free_madvised(void *memory, size_t memory_size)
+{
+	memset(memory, 0x00, memory_size);
+	munmap(memory, memory_size);
 }
 
 char *fgets_no_echo(char *buf, int size, FILE *stream)

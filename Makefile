@@ -38,6 +38,13 @@ check-getpw: test-getpw
 	./test-getpw
 	@echo "SUCCESS! ($@)"
 
+test-alloc-madvised: tests/test-alloc-madvised.c $(TEST_DEPS)
+	$(CC) $(TEST_CFLAGS) $< -o $@ $(PWC_LDADD)
+
+check-alloc-madvised: test-alloc-madvised
+	./test-alloc-madvised
+	@echo "SUCCESS! ($@)"
+
 test-is-valid-for-salt: tests/test-is-valid-for-salt.c $(TEST_DEPS)
 	$(CC) $(TEST_CFLAGS) $< -o $@ $(PWC_LDADD)
 
@@ -68,6 +75,7 @@ check-mailpw-change-passwd: tests/test-mailpw-change-passwd.pl mailpw pwcrypt
 check-unit: check-crypt-algo \
 		check-getpw \
 		check-is-valid-for-salt \
+		check-alloc-madvised \
 		check-mailpw-get-instances \
 		check-mailpw-who-am-i \
 		check-mailpw-who-am-i-false-env \
