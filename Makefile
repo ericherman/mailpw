@@ -31,11 +31,11 @@ check-crypt-algo: test-crypt-algo
 	./test-crypt-algo
 	@echo "SUCCESS! ($@)"
 
-test-getpass: tests/test-getpass.c $(TEST_DEPS)
+test-getpw: tests/test-getpw.c $(TEST_DEPS)
 	$(CC) $(TEST_CFLAGS) $< -o $@ $(PWC_LDADD)
 
-check-getpass: test-getpass
-	./test-getpass
+check-getpw: test-getpw
+	./test-getpw
 	@echo "SUCCESS! ($@)"
 
 test-is-valid-for-salt: tests/test-is-valid-for-salt.c $(TEST_DEPS)
@@ -66,7 +66,7 @@ check-mailpw-change-passwd: tests/test-mailpw-change-passwd.pl mailpw pwcrypt
 	@echo "SUCCESS! ($@)"
 
 check-unit: check-crypt-algo \
-		check-getpass \
+		check-getpw \
 		check-is-valid-for-salt \
 		check-mailpw-get-instances \
 		check-mailpw-who-am-i \

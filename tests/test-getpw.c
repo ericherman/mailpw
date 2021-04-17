@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
-/* test-getpass.c */
+/* test-getpw.c */
 /* Copyright (C) 2021 Eric Herman <eric@freesa.org> */
 
 #include "pwcrypt.c"
@@ -12,7 +12,7 @@
 static void *global_ctx = NULL;
 /*************************************************************************/
 
-struct getpass_testing_context {
+struct getpw_testing_context {
 	unsigned *failures;
 	unsigned call_counter;
 	FILE *tty;
@@ -20,7 +20,7 @@ struct getpass_testing_context {
 
 char *fgets_bogus(char *s, int size, FILE *stream)
 {
-	struct getpass_testing_context *ctx = global_ctx;
+	struct getpw_testing_context *ctx = global_ctx;
 	++(ctx->call_counter);
 	*(ctx->failures) += check(ctx->tty == stream, "tty");
 
@@ -28,11 +28,11 @@ char *fgets_bogus(char *s, int size, FILE *stream)
 	return s;
 }
 
-unsigned test_getpass_no_confirm_no_type(void)
+unsigned test_getpw_no_confirm_no_type(void)
 {
 	unsigned failures = 0;
 
-	struct getpass_testing_context ctx;
+	struct getpw_testing_context ctx;
 	ctx.failures = &failures;
 	ctx.call_counter = 0;
 	const size_t fake_tty_buf_size = 2048;
@@ -51,7 +51,7 @@ unsigned test_getpass_no_confirm_no_type(void)
 
 	global_ctx = &ctx;
 
-	getpass(buf, buf2, buf_size, type, confirm, fgets_bogus, ctx.tty);
+	getpw(buf, buf2, buf_size, type, confirm, fgets_bogus, ctx.tty);
 
 	fclose(ctx.tty);
 
@@ -68,7 +68,7 @@ unsigned test_getpass_no_confirm_no_type(void)
 
 char *wrong_first_try(char *s, int size, FILE *stream)
 {
-	struct getpass_testing_context *ctx = global_ctx;
+	struct getpw_testing_context *ctx = global_ctx;
 	(void)stream;
 
 	++(ctx->call_counter);
@@ -83,11 +83,11 @@ char *wrong_first_try(char *s, int size, FILE *stream)
 	return s;
 }
 
-unsigned test_getpass_wrong_first_try(void)
+unsigned test_getpw_wrong_first_try(void)
 {
 	unsigned failures = 0;
 
-	struct getpass_testing_context ctx;
+	struct getpw_testing_context ctx;
 	ctx.failures = &failures;
 	ctx.call_counter = 0;
 	const size_t fake_tty_buf_size = 2048;
@@ -106,7 +106,7 @@ unsigned test_getpass_wrong_first_try(void)
 
 	global_ctx = &ctx;
 
-	getpass(buf, buf2, buf_size, type, confirm, wrong_first_try, ctx.tty);
+	getpw(buf, buf2, buf_size, type, confirm, wrong_first_try, ctx.tty);
 
 	fclose(ctx.tty);
 
@@ -124,8 +124,8 @@ int main(void)
 {
 	unsigned failures = 0;
 
-	failures += run_test(test_getpass_no_confirm_no_type);
-	failures += run_test(test_getpass_wrong_first_try);
+	failures += run_test(test_getpw_no_confirm_no_type);
+	failures += run_test(test_getpw_wrong_first_try);
 
-	return failures_to_status("test-getpass", failures);
+	return failures_to_status("test-getpw", failures);
 }

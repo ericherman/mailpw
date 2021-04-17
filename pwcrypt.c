@@ -46,8 +46,8 @@ const char *pwcrypt_version_str = "1.0.0";
 
 /* prototypes */
 char *chomp_crlf(char *str, size_t max);
-void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm,
-	     char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty);
+void getpw(char *buf, char *buf2, size_t size, const char *type, int confirm,
+	   char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty);
 void getrandom_salt(char *buf, size_t size);
 char *fgets_no_echo(char *buf, int size, FILE *stream);
 int is_valid_for_salt(char c);
@@ -95,8 +95,8 @@ int pwcrypt(FILE *out, int confirm, const char *type,
 	char plaintext_passphrase[plaintext_passphrase_size];
 	char plaintext_passphrase2[plaintext_passphrase_size];
 
-	getpass(plaintext_passphrase, plaintext_passphrase2,
-		plaintext_passphrase_size, type, confirm, fgets_func, tty);
+	getpw(plaintext_passphrase, plaintext_passphrase2,
+	      plaintext_passphrase_size, type, confirm, fgets_func, tty);
 
 	char *encrypted = crypt_r(plaintext_passphrase, algo_salt, &data);
 	if (!encrypted) {
@@ -138,8 +138,8 @@ char *fgets_no_echo(char *buf, int size, FILE *stream)
 	return str;
 }
 
-void getpass(char *buf, char *buf2, size_t size, const char *type, int confirm,
-	     char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty)
+void getpw(char *buf, char *buf2, size_t size, const char *type, int confirm,
+	   char *(*fgets_func)(char *buf, int size, FILE *tty), FILE *tty)
 {
 	assert(buf);
 	assert(!confirm || buf2);
