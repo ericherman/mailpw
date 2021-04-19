@@ -1,0 +1,79 @@
+The 'mailpw' program allows users to change their email passwords from
+the command-line.
+
+The 'mailpw' repository also includes 'pwcrypt', a low-level utility for
+password hash generation, which which 'mailpw' is designed to work.
+
+The 'mailpw' program is designed for systems where the email login names
+match the system login names and the email passwords can be are stored
+as hashes in files.
+
+As the user has already logged into the system, probably via SSH,
+additional authentication is not performed.
+
+login name
+----------
+The email login name is obtained via a call to '/usr/bin/whoami' or
+'/usr/bin/who' rather than trusting the '$USER' environment variable.
+
+mailpw.conf
+-----------
+If a paramter is supplied to 'mailpw', it will use this as a path to the
+configuration, otherwise it will read its configuration from the default
+path of '/etc/mailpw.conf'. The configuration file is expected to consist
+of three items per configuration line separated by spaces: a group key,
+a delimiter type, and a file system path.  Blank lines and anything
+following the "#" character are ignored. Group keys do not need to be
+unique. Valid delimiter types are "space" for whitespace-delimited as is
+sometimes used by opensmtpd or "passwd" for colon-delimited as are are
+sometimes used by dovecot.
+
+For example:
+
+	# /etc/mailpw.conf
+	example	space	/etc/opensmtpd/users
+	example	passwd	/etc/dovecot/passwd
+
+More examples can be found in the 'tests/' directory of this codebase.
+
+passphrase hash
+---------------
+By default, 'mailpw' uses 'pwcrypt --type=mail' to prompt the user to
+enter a new passphrase, but if additional arguments beyond the path to
+the configuration file are provided, these will be used as the
+command instead.
+
+pwcrypt
+-------
+The 'pwcrypt' program is used for generating '/etc/shadow' style hashes.
+This is done via 'crypt_r', which is provided by GLibC.
+
+By default, 'pwcrypt' will generate a 16 character random "salt", prompt
+the user to enter and re-enter a passphrase, then call 'crypt_r' with
+the salt and passphrase to generate a SHA512 hash. More information
+about 'crypt_r' may be available in the "NOTES" section of 'crypt(3)'
+man page.
+
+Command-line arguments allow for testing against previously generated
+hashes. For instance, to test against your own user's entry in the
+'/etc/shadow' file, you could:
+
+	make
+	PW=`sudo grep $USER /etc/shadow | cut -f2 -d':'`
+	ALGO=`echo "$PW" | cut -d'$' -f2`
+	SALT=`echo "$PW" | cut -d'$' -f3`
+	echo "$PW"
+	./pwcrypt --algorithm=$ALGO --salt="$SALT"
+
+The passphrase is not echoed to the terminal as it is typed, and is only
+written to a special short-lived buffer allocated for use with 'crypt_r'
+and cleared and freed immediately after 'crypt_r' returns.
+
+The '--help' option displays the command-line option help text.
+
+License
+-------
+These programs are free software; you can redistribute them and/or
+modify them under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 3 of the
+License, or (at your option) any later version.
