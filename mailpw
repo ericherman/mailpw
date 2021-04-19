@@ -155,9 +155,7 @@ sub find_instances_for_user {
 sub replace_hash {
     my ( $data, $user, $delim, $new_hash ) = @_;
 
-    #TODO: use a capture group
-    my $sep      = $delim eq '\s' ? ' ' : $delim;
-    my $replaced = ( $data =~ s/$user$delim[^$delim]+/$user$sep$new_hash/r );
+    my $replaced = ( $data =~ s/($user$delim+)[^$delim]+/$1$new_hash/r );
     return $replaced;
 }
 
