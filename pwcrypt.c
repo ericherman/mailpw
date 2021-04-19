@@ -8,7 +8,7 @@
  * To generate a password for an /etc/shadow -like file:
  *
  *	pwcrypt \
- *		[--confirm] \
+ *		[--no-confirm] \
  *		[--type='email'] \
  *		[--algorithm='SHA512'] \
  *		[--salt='UD23qlwjerf']
@@ -385,8 +385,8 @@ void pwcrypt_help(FILE *out)
 	fprintf(out, "  -h, --help                   ");
 	fprintf(out, "   Prints this message and exits.\n");
 
-	fprintf(out, "  -n, --no-confirm                ");
-	fprintf(out, "   Do not prompt twice to enter the passphrase.\n");
+	fprintf(out, "  -n, --no-confirm             ");
+	fprintf(out, "   Do not prompt to re-enter the passphrase.\n");
 
 	fprintf(out, "  -s STRING, --salt=STRING     ");
 	fprintf(out, "   Use the STRING as the salt.\n");
