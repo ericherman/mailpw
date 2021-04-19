@@ -61,8 +61,10 @@ sub parse_mailpw_config {
     my $instances = {};
     while ( my $line = <$fh> ) {
 
-        # skip comments and empty lines
-        if ( ( $line =~ /^\s*#/ ) || ( $line =~ /^\s*$/ ) ) {
+        $line = trim_removing_comments($line);
+
+        # skip empty lines
+        if ( !length($line) ) {
             next;    # The "next" command is like "continue" in C
         }
 
@@ -175,5 +177,11 @@ sub replace_hash {
 sub trim {
     my ($s) = @_;
     $s =~ s/^\s+|\s+$//g;
+    return $s;
+}
+
+sub trim_removing_comments {
+    my ($s) = @_;
+    $s =~ s/^\s+|\s+$|#.*$//g;
     return $s;
 }
