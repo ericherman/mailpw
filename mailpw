@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use File::Copy;
+use File::Temp qw( tempfile );
 
 # Call mailpw() with commandline arguments unless loaded as a module.
 # see "perldoc -f caller"
@@ -116,16 +117,22 @@ sub change_instance_passwds {
             my $type  = $instances->{$instance}->{$pwfile};
             my $delim = delim_for_type($type);
 
-            copy( $pwfile, "$pwfile.next" ) or die $!;
-            open my $orig, "<", $pwfile        or die $!;
-            open my $next, ">", "$pwfile.next" or die $!;
+            # TODO: locking?
+            my ( $next, $pwfile_next ) =
+              tempfile( "mailpw-XXXXXX", UNLINK => 0, SUFFIX => ".conf" )
+              or die $!;
+            open my $orig, "<", $pwfile or die $!;
+
             while ( my $line = <$orig> ) {
                 print $next replace_hash( $line, $user, $delim, $hash );
             }
+
             close($orig);
             close($next);
-            copy( $pwfile,        "$pwfile.orig" ) or die $!;
-            copy( "$pwfile.next", $pwfile )        or die $!;
+
+            unlink("$pwfile.orig");
+            link( $pwfile, "$pwfile.orig" ) or die $!;
+            move( $pwfile_next, $pwfile )   or die $!;
         }
     }
 }
