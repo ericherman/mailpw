@@ -5,6 +5,7 @@
 use strict;
 use warnings;
 
+use Fcntl qw( :flock );
 use File::Copy;
 use File::Temp qw( tempfile );
 
@@ -22,16 +23,10 @@ exit( mailpw(@ARGV) ) unless caller();
 sub mailpw {
 
     my $mailpw_conf_path = shift;
-    $mailpw_conf_path ||= default_config_path();
 
     my $user = who_am_i();
 
-    open( my $fh, '<', $mailpw_conf_path )
-      or die "Could not open file '$mailpw_conf_path' $! $?";
-    my $instances = parse_mailpw_config($fh);
-    close($fh);
-
-    change_instance_passwds( *STDOUT, $user, $instances, @_ );
+    change_instance_passwds( *STDOUT, $user, $mailpw_conf_path, @_ );
 
     return 0;
 }
@@ -86,11 +81,17 @@ sub delim_for_type {
 }
 
 sub change_instance_passwds {
-    my $out       = shift;
-    my $user      = shift;
-    my $instances = shift;
+    my $out              = shift;
+    my $user             = shift;
+    my $mailpw_conf_path = shift;
 
     my $pwcrypt_cmd = scalar(@_) ? join( ' ', @_ ) : 'pwcrypt --type=mail';
+
+    $mailpw_conf_path ||= default_config_path();
+    open( my $fh, '<', $mailpw_conf_path )
+      or die "Could not open file '$mailpw_conf_path' $! $?";
+    my $instances = parse_mailpw_config($fh);
+    close($fh);
 
     my $user_instances = find_instances_for_user( $user, $instances );
 
@@ -112,12 +113,15 @@ sub change_instance_passwds {
 
     my $hash = trim(`$pwcrypt_cmd | tail -n1`);
 
+    my $lock_path = $mailpw_conf_path;
+    open( my $fh_lock, '>>', $lock_path ) or die "open '$lock_path' failed. $!";
+    flock( $fh_lock, LOCK_EX ) or die "flock '$lock_path' failed. $!";
+
     foreach my $instance (@instances_to_change) {
         foreach my $pwfile ( keys %{ $instances->{$instance} } ) {
             my $type  = $instances->{$instance}->{$pwfile};
             my $delim = delim_for_type($type);
 
-            # TODO: locking?
             my ( $next, $pwfile_next ) =
               tempfile( "mailpw-XXXXXX", UNLINK => 0, SUFFIX => ".conf" )
               or die $!;
@@ -130,11 +134,13 @@ sub change_instance_passwds {
             close($orig);
             close($next);
 
-            unlink("$pwfile.orig");
-            link( $pwfile, "$pwfile.orig" ) or die $!;
-            move( $pwfile_next, $pwfile )   or die $!;
+            unlink("$pwfile.old");
+            link( $pwfile, "$pwfile.old" ) or die $!;
+            move( $pwfile_next, $pwfile )  or die $!;
         }
     }
+
+    close($fh_lock) or die "close lock '$lock_path' failed. $!";
 }
 
 # find the instances which have files which contain this user

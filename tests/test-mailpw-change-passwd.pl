@@ -7,7 +7,7 @@ use warnings;
 use File::Temp qw( tempdir tempfile );
 
 use Test;
-BEGIN { plan tests => 43 }
+BEGIN { plan tests => 42 }
 
 # Load the functions in mailpw
 do './mailpw';
@@ -30,7 +30,7 @@ sub file_contains {
 }
 
 # create a temp dir for our tests
-my $dir = tempdir( CLEANUP => 7 );
+my $dir = tempdir( CLEANUP => 1 );
 
 # trailing Xs are changed
 my $conf_template = "test-mailpw-XXXXXX";
@@ -76,7 +76,7 @@ margaret $margaret_hash
 EOF
 close($bar_sp_fh);
 
-my ( $conf_fh, $conf_fname ) =
+my ( $conf_fh, $conf_path ) =
   tempfile( $conf_template, DIR => $dir, UNLINK => 0, SUFFIX => ".conf" );
 
 print $conf_fh <<"EOF";
@@ -89,13 +89,6 @@ bar\tpasswd\t$bar_pw_fname
 bar\tspace\t$bar_sp_fname
 EOF
 close($conf_fh);
-
-open( $conf_fh, '<', $conf_fname )
-  or die "Could not open file '$conf_fname' $! $?";
-my $instances = parse_mailpw_config($conf_fh);
-close($conf_fh);
-
-ok( scalar( keys %$instances ) == 2 );
 
 my $salt  = 'just.a.pinch';
 my $newpw = 'Love is infinite, time is not.';
@@ -130,7 +123,7 @@ my $outstr = '';
 open( my $fakeout, '>', \$outstr ) or die "Can't open local string? $!";
 
 my $pwcrypt_cmd = "tests/expect-no-confirm email sha512 $salt '$newpw'";
-change_instance_passwds( $fakeout, 'brian', $instances, $pwcrypt_cmd );
+change_instance_passwds( $fakeout, 'brian', $conf_path, $pwcrypt_cmd );
 close($fakeout);
 
 ok( index( $outstr, "foo" ) >= 0 );
