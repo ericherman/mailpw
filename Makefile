@@ -106,8 +106,9 @@ check-acceptance-mailpw: tests/expect-mailpw mailpw pwcrypt \
 		tests/faux/foo/dovecot-passwd.expected \
 		tests/faux/foo/opensmtpd-users \
 		tests/faux/foo/opensmtpd-users.expected
+	@echo creatig modifiable copies of user/passwd files
 	rm -rfv faux
-	cp -irv tests/faux .
+	cp -ir tests/faux .
 	sed -i -e "s/USER/$$USER/g" faux/foo/* faux/bar/* faux/baz/*
 	tests/expect-mailpw tests/faux/faux-mailpw.conf \
 		pinch.of.salt Ever.expanding.circles.of.love
@@ -117,6 +118,8 @@ check-acceptance-mailpw: tests/expect-mailpw mailpw pwcrypt \
 	diff -u faux/foo/dovecot-passwd faux/foo/dovecot-passwd.expected
 	diff -u faux/bar/opensmtpd-users faux/bar/opensmtpd-users.expected
 	diff -u faux/bar/dovecot-passwd faux/bar/dovecot-passwd.expected
+	@echo Success, thus removing modified copies of user/passwd files
+	rm -rf faux
 	@echo "SUCCESS! ($@)"
 
 check-acceptance: check-acceptance-md5 \
