@@ -186,6 +186,6 @@ sub trim {
 
 sub trim_removing_comments {
     my ($s) = @_;
-    $s =~ s/^\s+|\s+$|#.*$//g;
+    $s =~ s/^\s+|\s+$|\s*#.*$//g;
     return $s;
 }
