@@ -9,8 +9,12 @@ use Fcntl qw( :flock );
 use File::Copy;
 use File::Temp qw( tempfile );
 
-# Call mailpw() with commandline arguments unless loaded as a module.
+# The "exit(main()) unless caller();" pattern allows a perl file to be
+# loaded like a module using "do" OR run as regular script from the
+# command-line.
 # see "perldoc -f caller"
+# see "perldoc -f do"
+#
 # @ARGV is similar to C's argv, except that the @ARGV of Perl does
 # not contain the name of the program (that is the $0 variable).
 exit( mailpw(@ARGV) ) unless caller();
