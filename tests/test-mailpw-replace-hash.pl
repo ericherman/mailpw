@@ -4,8 +4,9 @@
 use strict;
 use warnings;
 
+our $PLANNED;
 use Test;
-BEGIN { plan tests => 16 }
+BEGIN { $PLANNED = 16; plan tests => $PLANNED; }
 
 # Load the functions in mailpw
 do './mailpw';
@@ -27,19 +28,21 @@ my $delim = ':';
 my $brian_new_hash =
 '$6$just.a.pinch$oBamM8jgbJcLY0b37N72jEgFkAahssOGbXPFDgXidFG3TYSBZvEDk4FhAxXF418fyxgyxUvrj00X5qHAxJ18Z.';
 
-ok( index( $passwd_in, "ada:$ada_hash:" ) >= 0 );
-ok( index( $passwd_in, "brian:$brian_old_hash" ) >= 0 );
-ok( index( $passwd_in, "margaret:$margaret_hash" ) >= 0 );
+my $ok = 0;
 
-ok( index( $passwd_in, $brian_new_hash ) < 0 );
+$ok += ok( index( $passwd_in, "ada:$ada_hash:" ) >= 0 );
+$ok += ok( index( $passwd_in, "brian:$brian_old_hash" ) >= 0 );
+$ok += ok( index( $passwd_in, "margaret:$margaret_hash" ) >= 0 );
+
+$ok += ok( index( $passwd_in, $brian_new_hash ) < 0 );
 
 my $replaced = replace_hash( $passwd_in, $user, $delim, $brian_new_hash );
 
-ok( index( $replaced, "ada:$ada_hash:" ) >= 0 );
-ok( index( $replaced, "brian:$brian_new_hash:" ) >= 0 );
-ok( index( $replaced, "margaret:$margaret_hash" ) >= 0 );
+$ok += ok( index( $replaced, "ada:$ada_hash:" ) >= 0 );
+$ok += ok( index( $replaced, "brian:$brian_new_hash:" ) >= 0 );
+$ok += ok( index( $replaced, "margaret:$margaret_hash" ) >= 0 );
 
-ok( index( $replaced, $brian_old_hash ) < 0 );
+$ok += ok( index( $replaced, $brian_old_hash ) < 0 );
 
 # -----------------------------------------
 
@@ -50,16 +53,18 @@ brian $brian_old_hash
 margaret $margaret_hash
 EOF
 
-ok( index( $space_in, "ada $ada_hash" ) >= 0 );
-ok( index( $space_in, "brian $brian_old_hash" ) >= 0 );
-ok( index( $space_in, "margaret $margaret_hash" ) >= 0 );
+$ok += ok( index( $space_in, "ada $ada_hash" ) >= 0 );
+$ok += ok( index( $space_in, "brian $brian_old_hash" ) >= 0 );
+$ok += ok( index( $space_in, "margaret $margaret_hash" ) >= 0 );
 
-ok( index( $space_in, $brian_new_hash ) < 0 );
+$ok += ok( index( $space_in, $brian_new_hash ) < 0 );
 
 $replaced = replace_hash( $space_in, $user, $delim, $brian_new_hash );
 
-ok( index( $replaced, "ada $ada_hash" ) >= 0 );
-ok( index( $replaced, "brian $brian_new_hash" ) >= 0 );
-ok( index( $replaced, "margaret $margaret_hash" ) >= 0 );
+$ok += ok( index( $replaced, "ada $ada_hash" ) >= 0 );
+$ok += ok( index( $replaced, "brian $brian_new_hash" ) >= 0 );
+$ok += ok( index( $replaced, "margaret $margaret_hash" ) >= 0 );
 
-ok( index( $replaced, $brian_old_hash ) < 0 );
+$ok += ok( index( $replaced, $brian_old_hash ) < 0 );
+
+exit( $ok == $PLANNED ? 0 : 1 );

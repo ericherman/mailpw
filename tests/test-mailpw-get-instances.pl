@@ -6,8 +6,9 @@ use warnings;
 
 use File::Temp qw( tempdir tempfile );
 
+our $PLANNED;
 use Test;
-BEGIN { plan tests => 7 }
+BEGIN { $PLANNED = 7; plan tests => $PLANNED; }
 
 # Load the functions in mailpw
 do './mailpw';
@@ -42,12 +43,16 @@ open( $conf_fh, '<', $conf_fname )
 my $instances = parse_mailpw_config($conf_fh);
 close($conf_fh);
 
-ok( scalar( keys %$instances ) == 2 );
+my $ok = 0;
 
-ok( scalar( keys %{ $instances->{foo} } ) == 2 );
-ok( $instances->{foo}->{$foo_pw_fname} eq "passwd" );
-ok( $instances->{foo}->{$foo_sp_fname} eq "space" );
+$ok += ok( scalar( keys %$instances ), 2 );
 
-ok( scalar( keys %{ $instances->{bar} } ) == 2 );
-ok( $instances->{bar}->{$bar_pw_fname} eq "passwd" );
-ok( $instances->{bar}->{$bar_sp_fname} eq "space" );
+$ok += ok( scalar( keys %{ $instances->{foo} } ),      2 );
+$ok += ok( $instances->{foo}->{$foo_pw_fname}->{type}, "passwd" );
+$ok += ok( $instances->{foo}->{$foo_sp_fname}->{type}, "space" );
+
+$ok += ok( scalar( keys %{ $instances->{bar} } ),      2 );
+$ok += ok( $instances->{bar}->{$bar_pw_fname}->{type}, "passwd" );
+$ok += ok( $instances->{bar}->{$bar_sp_fname}->{type}, "space" );
+
+exit( $ok == $PLANNED ? 0 : 1 );

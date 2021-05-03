@@ -4,8 +4,9 @@
 use strict;
 use warnings;
 
+our $PLANNED;
 use Test;
-BEGIN { plan tests => 1 }
+BEGIN { $PLANNED = 1; plan tests => $PLANNED }
 
 # Load the functions in mailpw
 do './mailpw';
@@ -16,4 +17,8 @@ $expected ||= $ENV{USER};
 
 my $who = who_am_i();
 
-ok( $who eq $expected );
+my $ok = 0;
+
+$ok += ok( $who, $expected );
+
+exit( $ok == $PLANNED ? 0 : 1 );

@@ -122,29 +122,31 @@ my $newpw = 'Love is infinite, time is not.';
 my $brian_newhash =
 '$6$just.a.pinch$oBamM8jgbJcLY0b37N72jEgFkAahssOGbXPFDgXidFG3TYSBZvEDk4FhAxXF418fyxgyxUvrj00X5qHAxJ18Z.';
 
-ok( file_contains( $foo_pw_fname,  "ada:$ada_hash:" ) );
-ok( file_contains( $foo_pw_fname,  "brian:$brian_oldhash:" ) );
-ok( !file_contains( $foo_pw_fname, $brian_newhash ) );
-ok( !file_contains( $foo_pw_fname, "margaret" ) );
-ok( !file_contains( $foo_pw_fname, $margaret_hash ) );
+my $ok = 0;
 
-ok( file_contains( $foo_sp_fname,  "ada $ada_hash" ) );
-ok( file_contains( $foo_sp_fname,  "brian $brian_oldhash" ) );
-ok( !file_contains( $foo_sp_fname, $brian_newhash ) );
-ok( !file_contains( $foo_sp_fname, "margaret" ) );
-ok( !file_contains( $foo_sp_fname, $margaret_hash ) );
+$ok += ok( file_contains( $foo_pw_fname,  "ada:$ada_hash:" ) );
+$ok += ok( file_contains( $foo_pw_fname,  "brian:$brian_oldhash:" ) );
+$ok += ok( !file_contains( $foo_pw_fname, $brian_newhash ) );
+$ok += ok( !file_contains( $foo_pw_fname, "margaret" ) );
+$ok += ok( !file_contains( $foo_pw_fname, $margaret_hash ) );
 
-ok( !file_contains( $bar_pw_fname, "ada:" ) );
-ok( !file_contains( $bar_pw_fname, $ada_hash ) );
-ok( file_contains( $bar_pw_fname,  "brian:$brian_oldhash:" ) );
-ok( !file_contains( $bar_pw_fname, $brian_newhash ) );
-ok( file_contains( $bar_pw_fname,  "margaret:$margaret_hash:" ) );
+$ok += ok( file_contains( $foo_sp_fname,  "ada $ada_hash" ) );
+$ok += ok( file_contains( $foo_sp_fname,  "brian $brian_oldhash" ) );
+$ok += ok( !file_contains( $foo_sp_fname, $brian_newhash ) );
+$ok += ok( !file_contains( $foo_sp_fname, "margaret" ) );
+$ok += ok( !file_contains( $foo_sp_fname, $margaret_hash ) );
 
-ok( !file_contains( $bar_sp_fname, "ada" ) );
-ok( !file_contains( $bar_sp_fname, $ada_hash ) );
-ok( file_contains( $bar_sp_fname,  "brian $brian_oldhash" ) );
-ok( !file_contains( $bar_sp_fname, $brian_newhash ) );
-ok( file_contains( $bar_sp_fname,  "margaret $margaret_hash" ) );
+$ok += ok( !file_contains( $bar_pw_fname, "ada:" ) );
+$ok += ok( !file_contains( $bar_pw_fname, $ada_hash ) );
+$ok += ok( file_contains( $bar_pw_fname,  "brian:$brian_oldhash:" ) );
+$ok += ok( !file_contains( $bar_pw_fname, $brian_newhash ) );
+$ok += ok( file_contains( $bar_pw_fname,  "margaret:$margaret_hash:" ) );
+
+$ok += ok( !file_contains( $bar_sp_fname, "ada" ) );
+$ok += ok( !file_contains( $bar_sp_fname, $ada_hash ) );
+$ok += ok( file_contains( $bar_sp_fname,  "brian $brian_oldhash" ) );
+$ok += ok( !file_contains( $bar_sp_fname, $brian_newhash ) );
+$ok += ok( file_contains( $bar_sp_fname,  "margaret $margaret_hash" ) );
 
 my $outstr = '';
 open( my $fakeout, '>', \$outstr ) or die "Can't open local string? $!";
@@ -153,37 +155,39 @@ my $pwcrypt_cmd = "tests/expect-no-confirm email sha512 $salt '$newpw'";
 change_instance_passwds( $fakeout, 'brian', $conf_path, $pwcrypt_cmd );
 close($fakeout);
 
-ok( index( $outstr, "foo" ) >= 0 );
-ok( index( $outstr, "bar" ) >= 0 );
+$ok += ok( index( $outstr, "foo" ) >= 0 );
+$ok += ok( index( $outstr, "bar" ) >= 0 );
 
-ok( file_contains( $foo_pw_fname,  "ada:$ada_hash:" ) );
-ok( file_contains( $foo_pw_fname,  "brian:$brian_newhash:" ) );
-ok( !file_contains( $foo_pw_fname, $brian_oldhash ) );
-ok( !file_contains( $foo_pw_fname, "margaret" ) );
-ok( !file_contains( $foo_pw_fname, $margaret_hash ) );
+$ok += ok( file_contains( $foo_pw_fname,  "ada:$ada_hash:" ) );
+$ok += ok( file_contains( $foo_pw_fname,  "brian:$brian_newhash:" ) );
+$ok += ok( !file_contains( $foo_pw_fname, $brian_oldhash ) );
+$ok += ok( !file_contains( $foo_pw_fname, "margaret" ) );
+$ok += ok( !file_contains( $foo_pw_fname, $margaret_hash ) );
 
-ok( file_contains( $foo_sp_fname,  "ada $ada_hash" ) );
-ok( file_contains( $foo_sp_fname,  "brian $brian_newhash" ) );
-ok( !file_contains( $foo_sp_fname, $brian_oldhash ) );
-ok( !file_contains( $foo_sp_fname, "margaret" ) );
-ok( !file_contains( $foo_sp_fname, $margaret_hash ) );
+$ok += ok( file_contains( $foo_sp_fname,  "ada $ada_hash" ) );
+$ok += ok( file_contains( $foo_sp_fname,  "brian $brian_newhash" ) );
+$ok += ok( !file_contains( $foo_sp_fname, $brian_oldhash ) );
+$ok += ok( !file_contains( $foo_sp_fname, "margaret" ) );
+$ok += ok( !file_contains( $foo_sp_fname, $margaret_hash ) );
 
-ok( !file_contains( $bar_pw_fname, "ada:" ) );
-ok( !file_contains( $bar_pw_fname, $ada_hash ) );
-ok( file_contains( $bar_pw_fname,  "brian:$brian_newhash:" ) );
-ok( !file_contains( $bar_pw_fname, $brian_oldhash ) );
-ok( file_contains( $bar_pw_fname,  "margaret:$margaret_hash:" ) );
+$ok += ok( !file_contains( $bar_pw_fname, "ada:" ) );
+$ok += ok( !file_contains( $bar_pw_fname, $ada_hash ) );
+$ok += ok( file_contains( $bar_pw_fname,  "brian:$brian_newhash:" ) );
+$ok += ok( !file_contains( $bar_pw_fname, $brian_oldhash ) );
+$ok += ok( file_contains( $bar_pw_fname,  "margaret:$margaret_hash:" ) );
 
-ok( !file_contains( $bar_sp_fname, "ada" ) );
-ok( !file_contains( $bar_sp_fname, $ada_hash ) );
-ok( file_contains( $bar_sp_fname,  "brian $brian_newhash" ) );
-ok( !file_contains( $bar_sp_fname, $brian_oldhash ) );
-ok( file_contains( $bar_sp_fname,  "margaret $margaret_hash" ) );
+$ok += ok( !file_contains( $bar_sp_fname, "ada" ) );
+$ok += ok( !file_contains( $bar_sp_fname, $ada_hash ) );
+$ok += ok( file_contains( $bar_sp_fname,  "brian $brian_newhash" ) );
+$ok += ok( !file_contains( $bar_sp_fname, $brian_oldhash ) );
+$ok += ok( file_contains( $bar_sp_fname,  "margaret $margaret_hash" ) );
 
 my ( undef, undef, $foo_pw_mode, undef, undef, $foo_pw_gid ) =
   stat($foo_pw_fname);
 my $foo_pw_group = getgrgid($foo_pw_gid);
 
-ok( sprintf( "%04o", $foo_pw_mode ), "10" . "0640" );
+$ok += ok( sprintf( "%04o", $foo_pw_mode ), "10" . "0640" );
 
-ok( $foo_pw_group, $some_other_group );
+$ok += ok( $foo_pw_group, $some_other_group );
+
+exit( $ok == $PLANNED ? 0 : 1 );
