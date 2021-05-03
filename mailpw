@@ -6,6 +6,7 @@ use strict;
 use warnings;
 
 use Fcntl qw( :flock );
+use File::Basename qw( dirname );
 use File::Copy;
 use File::Temp qw( tempfile );
 
@@ -58,6 +59,17 @@ sub who_am_i {
     return $user;
 }
 
+#
+sub name_to_uid {
+    my ($user) = @_;
+    return $user;
+}
+
+sub name_to_gid {
+    my ($group) = @_;
+    return $group;
+}
+
 # pass in a an open file handle to the mailpw.conf
 sub parse_mailpw_config {
     my ($fh) = @_;
@@ -72,10 +84,20 @@ sub parse_mailpw_config {
             next;    # The "next" command is like "continue" in C
         }
 
-        my ( $group, $type, $path ) = split( /\s/, $line );
-        die("bad line: '$line'\n") unless ( $group || $type || $path );
+        my ( $instance, $type, $path, $user, $group, $mode ) =
+          split( /\s/, $line );
+        die("bad line: '$line'\n") unless ( $instance && $type && $path );
 
-        $instances->{$group}->{$path} = $type;
+        $instances->{$instance}->{$path}->{type} = $type;
+
+        if ( defined $user ) {
+            die("bad line: '$line'\n") unless ( defined $group );
+            $instances->{$instance}->{$path}->{uid} = name_to_uid($user);
+            $instances->{$instance}->{$path}->{gid} = name_to_gid($group);
+            if ( defined $mode ) {
+                $instances->{$instance}->{$path}->{mode} = oct($mode);
+            }
+        }
     }
 
     return $instances;
@@ -125,18 +147,30 @@ sub change_instance_passwds {
 
     foreach my $instance (@instances_to_change) {
         foreach my $pwfile ( keys %{ $instances->{$instance} } ) {
-            my $type  = $instances->{$instance}->{$pwfile};
+            my $type  = $instances->{$instance}->{$pwfile}->{type};
             my $delim = delim_for_type($type);
 
-            my ( $next, $pwfile_next ) =
-              tempfile( "mailpw-XXXXXX", UNLINK => 0, SUFFIX => ".conf" )
-              or die $!;
+            my ( $next, $pwfile_next ) = tempfile(
+                "mailpw-XXXXXX",
+                DIR    => dirname($pwfile),
+                UNLINK => 0,
+                SUFFIX => ".conf"
+            ) or die $!;
             open my $orig, "<", $pwfile or die $!;
 
             while ( my $line = <$orig> ) {
                 print $next replace_hash( $line, $user, $delim, $hash );
             }
 
+            # stat $orig
+            # if (! defined $uid) {
+            #     use uid and gid from stat
+            # }
+            # if (! defined $mode) {
+            #     use mode from stat
+            # }
+            # chown
+            # chmod
             close($orig);
             close($next);
 
@@ -155,7 +189,7 @@ sub find_instances_for_user {
     my $user_instances = {};
     foreach my $instance ( keys %{$instances} ) {
         foreach my $pwfile ( keys %{ $instances->{$instance} } ) {
-            my $type  = $instances->{$instance}->{$pwfile};
+            my $type  = $instances->{$instance}->{$pwfile}->{type};
             my $delim = delim_for_type($type);
             open( my $pwin, '<', $pwfile ) or die "$pwfile: $!";
             while (<$pwin>) {
