@@ -59,17 +59,6 @@ sub who_am_i {
     return $user;
 }
 
-#
-sub name_to_uid {
-    my ($user) = @_;
-    return $user;
-}
-
-sub name_to_gid {
-    my ($group) = @_;
-    return $group;
-}
-
 # pass in a an open file handle to the mailpw.conf
 sub parse_mailpw_config {
     my ($fh) = @_;
@@ -89,15 +78,6 @@ sub parse_mailpw_config {
         die("bad line: '$line'\n") unless ( $instance && $type && $path );
 
         $instances->{$instance}->{$path}->{type} = $type;
-
-        if ( defined $user ) {
-            die("bad line: '$line'\n") unless ( defined $group );
-            $instances->{$instance}->{$path}->{uid} = name_to_uid($user);
-            $instances->{$instance}->{$path}->{gid} = name_to_gid($group);
-            if ( defined $mode ) {
-                $instances->{$instance}->{$path}->{mode} = oct($mode);
-            }
-        }
     }
 
     return $instances;
@@ -162,15 +142,13 @@ sub change_instance_passwds {
                 print $next replace_hash( $line, $user, $delim, $hash );
             }
 
-            # stat $orig
-            # if (! defined $uid) {
-            #     use uid and gid from stat
-            # }
-            # if (! defined $mode) {
-            #     use mode from stat
-            # }
-            # chown
-            # chmod
+            my ( undef, undef, $mode, undef, undef, $gid ) = stat($orig);
+
+            chown( -1, $gid, $next )
+              or die "could not chown new $pwfile to $gid $!";
+            chmod( $mode, $next )
+              or die "could not chmod new $pwfile to $mode $!";
+
             close($orig);
             close($next);
 
