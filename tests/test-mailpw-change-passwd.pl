@@ -6,8 +6,9 @@ use warnings;
 
 use File::Temp qw( tempdir tempfile );
 
+our $PLANNED;
 use Test;
-BEGIN { plan tests => 42 }
+BEGIN { $PLANNED = 44; plan tests => $PLANNED; }
 
 # Load the functions in mailpw
 do './mailpw';
@@ -27,6 +28,24 @@ sub file_contains {
     }
     close($fh);
     return $found;
+}
+
+sub groups {
+    my @groups = split( /\s/, `groups` );
+    return wantarray ? @groups : \@groups;
+}
+
+sub get_secondary_group {
+    my ($user) = @_;
+    $user //= $ENV{USER};
+    my ($user_group) = getgrnam($user);
+    for my $group ( groups() ) {
+        if ( ( $group ne $user_group ) && ( $group ne ':' ) ) {
+            return $group;
+        }
+    }
+    warn "no other group found for $user";
+    return;
 }
 
 # create a temp dir for our tests
@@ -57,6 +76,14 @@ ada:$ada_hash:1001:1001:Ada L:/home/ada:/bin/bash
 brian:$brian_oldhash:1002:1002:Brian K:/home/brian:/bin/sh
 EOF
 close($foo_pw_fh);
+
+my $some_other_group = get_secondary_group();
+
+my @args = ( "chgrp", $some_other_group, $foo_pw_fname );
+system(@args) == 0 or die "system(@args) failed: $?";
+
+@args = ( "chmod", "0640", $foo_pw_fname );
+system(@args) == 0 or die "system(@args) failed: $?";
 
 print $foo_sp_fh <<"EOF";
 ada $ada_hash
@@ -152,3 +179,11 @@ ok( !file_contains( $bar_sp_fname, $ada_hash ) );
 ok( file_contains( $bar_sp_fname,  "brian $brian_newhash" ) );
 ok( !file_contains( $bar_sp_fname, $brian_oldhash ) );
 ok( file_contains( $bar_sp_fname,  "margaret $margaret_hash" ) );
+
+my ( undef, undef, $foo_pw_mode, undef, undef, $foo_pw_gid ) =
+  stat($foo_pw_fname);
+my $foo_pw_group = getgrgid($foo_pw_gid);
+
+ok( sprintf( "%04o", $foo_pw_mode ), "10" . "0640" );
+
+ok( $foo_pw_group, $some_other_group );
