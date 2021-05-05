@@ -28,21 +28,44 @@ my $delim = ':';
 my $brian_new_hash =
 '$6$just.a.pinch$oBamM8jgbJcLY0b37N72jEgFkAahssOGbXPFDgXidFG3TYSBZvEDk4FhAxXF418fyxgyxUvrj00X5qHAxJ18Z.';
 
+sub contains {
+    my ( $haystack, $needle, $invert ) = @_;
+    my $found = ( index( $haystack, $needle ) >= 0 )                 ? 1 : 0;
+    my $ok    = ( ( $found && !$invert ) || ( !$found && $invert ) ) ? 1 : 0;
+    if ($ok) {
+        return $ok;
+    }
+    if ( !$found ) {
+        printf STDERR "'$needle' not found in '$haystack'\n";
+    }
+    else {
+        printf STDERR "unexepectedly found '$needle' in '$haystack'\n";
+    }
+    return 0;
+}
+
+sub not_contains {
+    my ( $haystack, $needle ) = @_;
+
+    my $invert = 1;
+    return contains( $haystack, $needle, $invert );
+}
+
 my $ok = 0;
 
-$ok += ok( index( $passwd_in, "ada:$ada_hash:" ) >= 0 );
-$ok += ok( index( $passwd_in, "brian:$brian_old_hash" ) >= 0 );
-$ok += ok( index( $passwd_in, "margaret:$margaret_hash" ) >= 0 );
+$ok += ok( contains( $passwd_in, "ada:$ada_hash:" ) );
+$ok += ok( contains( $passwd_in, "brian:$brian_old_hash" ) );
+$ok += ok( contains( $passwd_in, "margaret:$margaret_hash" ) );
 
-$ok += ok( index( $passwd_in, $brian_new_hash ) < 0 );
+$ok += ok( not_contains( $passwd_in, $brian_new_hash ) );
 
 my $replaced = replace_hash( $passwd_in, $user, $delim, $brian_new_hash );
 
-$ok += ok( index( $replaced, "ada:$ada_hash:" ) >= 0 );
-$ok += ok( index( $replaced, "brian:$brian_new_hash:" ) >= 0 );
-$ok += ok( index( $replaced, "margaret:$margaret_hash" ) >= 0 );
+$ok += ok( contains( $replaced, "ada:$ada_hash:" ) );
+$ok += ok( contains( $replaced, "brian:$brian_new_hash:" ) );
+$ok += ok( contains( $replaced, "margaret:$margaret_hash" ) );
 
-$ok += ok( index( $replaced, $brian_old_hash ) < 0 );
+$ok += ok( not_contains( $replaced, $brian_old_hash ) );
 
 # -----------------------------------------
 
@@ -53,18 +76,18 @@ brian $brian_old_hash
 margaret $margaret_hash
 EOF
 
-$ok += ok( index( $space_in, "ada $ada_hash" ) >= 0 );
-$ok += ok( index( $space_in, "brian $brian_old_hash" ) >= 0 );
-$ok += ok( index( $space_in, "margaret $margaret_hash" ) >= 0 );
+$ok += ok( contains( $space_in, "ada $ada_hash" ) );
+$ok += ok( contains( $space_in, "brian $brian_old_hash" ) );
+$ok += ok( contains( $space_in, "margaret $margaret_hash" ) );
 
-$ok += ok( index( $space_in, $brian_new_hash ) < 0 );
+$ok += ok( not_contains( $space_in, $brian_new_hash ) );
 
 $replaced = replace_hash( $space_in, $user, $delim, $brian_new_hash );
 
-$ok += ok( index( $replaced, "ada $ada_hash" ) >= 0 );
-$ok += ok( index( $replaced, "brian $brian_new_hash" ) >= 0 );
-$ok += ok( index( $replaced, "margaret $margaret_hash" ) >= 0 );
+$ok += ok( contains( $replaced, "ada $ada_hash" ) );
+$ok += ok( contains( $replaced, "brian $brian_new_hash" ) );
+$ok += ok( contains( $replaced, "margaret $margaret_hash" ) );
 
-$ok += ok( index( $replaced, $brian_old_hash ) < 0 );
+$ok += ok( not_contains( $replaced, $brian_old_hash ) );
 
 exit( $ok == $PLANNED ? 0 : 1 );
