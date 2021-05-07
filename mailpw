@@ -10,15 +10,20 @@ use File::Basename qw( dirname );
 use File::Copy;
 use File::Temp qw( tempfile );
 
+# No commandline arguments if called as a script
+#
 # The "exit(main()) unless caller();" pattern allows a perl file to be
 # loaded like a module using "do" OR run as regular script from the
 # command-line.
 # see "perldoc -f caller"
 # see "perldoc -f do"
 #
-# @ARGV is similar to C's argv, except that the @ARGV of Perl does
-# not contain the name of the program (that is the $0 variable).
-exit( mailpw(@ARGV) ) unless caller();
+# Since the "mailpw()" function arguments are useful for testing, but
+# they allow the caller to change the behaivor of the program, we never
+# pass @ARGV in "real life" instead we allow for test scripts to load
+# this file via "do" and call the mailpw() function and call it with
+# arguments.
+exit( mailpw() ) unless caller();
 
 # The first argument in the path to the config file used to find
 # the files to be modified.
