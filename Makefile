@@ -57,11 +57,11 @@ check-mailpw-get-instances: tests/test-mailpw-get-instances.pl mailpw
 	@echo "SUCCESS! ($@)"
 
 check-mailpw-who-am-i: tests/test-mailpw-who-am-i.pl mailpw
-	$(PERL) tests/test-mailpw-who-am-i.pl
+	SUDO_USER=foo $(PERL) tests/test-mailpw-who-am-i.pl foo
 	@echo "SUCCESS! ($@)"
 
-check-mailpw-who-am-i-false-env: tests/test-mailpw-who-am-i.pl mailpw
-	USER=foo $(PERL) tests/test-mailpw-who-am-i.pl $(USER)
+check-mailpw-who-am-i-no-sudo-user: tests/test-mailpw-who-am-i.pl mailpw
+	$(PERL) tests/test-mailpw-who-am-i.pl $(USER)
 	@echo "SUCCESS! ($@)"
 
 check-mailpw-replace-hash: tests/test-mailpw-replace-hash.pl mailpw
@@ -78,7 +78,7 @@ check-unit: check-crypt-algo \
 		check-alloc-madvised \
 		check-mailpw-get-instances \
 		check-mailpw-who-am-i \
-		check-mailpw-who-am-i-false-env \
+		check-mailpw-who-am-i-no-sudo-user \
 		check-mailpw-replace-hash \
 		check-mailpw-change-passwd
 	@echo "SUCCESS! ($@)"

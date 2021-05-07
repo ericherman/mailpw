@@ -40,7 +40,7 @@ sub default_config_path {
     return '/etc/mailpw.conf';
 }
 
-sub who_am_i {
+sub system_who_am_i {
     my $whoami = `/usr/bin/whoami`;
     my $user   = trim($whoami);
     if ( !$user ) {
@@ -57,6 +57,12 @@ sub who_am_i {
         die("Can not establish user");
     }
     return $user;
+}
+
+sub who_am_i {
+    my $sudo_user = $ENV{SUDO_USER};
+    return $sudo_user if $sudo_user;
+    return system_who_am_i();
 }
 
 # pass in a an open file handle to the mailpw.conf
