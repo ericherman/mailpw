@@ -142,10 +142,10 @@ sub change_instance_passwds {
                 print $next replace_hash( $line, $user, $delim, $hash );
             }
 
-            my ( undef, undef, $mode, undef, undef, $gid ) = stat($orig);
+            my ( undef, undef, $mode, undef, $uid, $gid ) = stat($orig);
 
-            chown( -1, $gid, $next )
-              or die "could not chown new $pwfile to $gid $!";
+            chown( $uid, $gid, $next )
+              or die "could not chown new $pwfile to $uid:$gid $!";
             chmod( $mode, $next )
               or die "could not chmod new $pwfile to $mode $!";
 
