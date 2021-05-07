@@ -12,6 +12,7 @@
 # patsubst : $(patsubst pattern,replacement,text)
 #       https://www.gnu.org/software/make/manual/html_node/Text-Functions.html
 
+INSTALL ?= install
 PERL ?= perl
 SHELL = /bin/bash
 
@@ -157,6 +158,24 @@ tidy-perl:
 	done
 
 tidy: tidy-c tidy-perl
+
+/usr/local/bin/mailpw: mailpw-wrapper
+	$(INSTALL) -o root -g root -m 755 $< $@
+
+/usr/local/bin/pwcrypt: pwcrypt
+	$(INSTALL) -o root -g root -m 755 $< $@
+
+/usr/local/libexec/mailpw: mailpw
+	$(INSTALL) -o mail -g mail -m 700 $< $@
+
+/etc/sudoers.d/mailpw: sudoers.mailpw
+	$(INSTALL) -o root -g root -m 644 $< $@
+
+install: /usr/local/bin/mailpw \
+		/usr/local/bin/pwcrypt \
+		/usr/local/libexec/mailpw \
+		/etc/sudoers.d/mailpw
+	@echo "installed"
 
 clean:
 	rm -rfv faux
