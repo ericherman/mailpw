@@ -1,0 +1,1 @@
+%mailusers ALL=(mail) NOPASSWD: /usr/local/libexec/mailpw
