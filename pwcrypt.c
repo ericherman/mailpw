@@ -388,10 +388,10 @@ void pwcrypt_help(FILE *out)
 	fprintf(out, "  -n, --no-confirm             ");
 	fprintf(out, "   Do not prompt to re-enter the passphrase.\n");
 
-	fprintf(out, "  -s STRING, --salt=STRING     ");
+	fprintf(out, "  -sSTRING, --salt=STRING      ");
 	fprintf(out, "   Use the STRING as the salt.\n");
 
-	fprintf(out, "  -t STRING, --type=STRING     ");
+	fprintf(out, "  -tSTRING, --type=STRING      ");
 	fprintf(out, "   Add the STRING to the prompt.\n");
 
 	fprintf(out, "  -v, --version                ");
