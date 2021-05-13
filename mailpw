@@ -133,8 +133,8 @@ sub change_instance_passwds {
     my $hash = trim(`$pwcrypt_cmd | tail -n1`);
 
     my $lock_path = $mailpw_conf_path;
-    open( my $fh_lock, '>>', $lock_path ) or die "open '$lock_path' failed. $!";
-    flock( $fh_lock, LOCK_EX ) or die "flock '$lock_path' failed. $!";
+    open( my $fh_lock, '<', $lock_path ) or die "open '$lock_path' failed. $!";
+    flock( $fh_lock, LOCK_EX )           or die "flock '$lock_path' failed. $!";
 
     foreach my $instance (@instances_to_change) {
         foreach my $pwfile ( keys %{ $instances->{$instance} } ) {
@@ -147,7 +147,7 @@ sub change_instance_passwds {
                 UNLINK => 0,
                 SUFFIX => ".conf"
             ) or die $!;
-            open my $orig, "<", $pwfile or die $!;
+            open my $orig, "<", $pwfile or die "could not open('<', $pwfile), $!";
 
             while ( my $line = <$orig> ) {
                 print $next replace_hash( $line, $user, $delim, $hash );
@@ -164,8 +164,10 @@ sub change_instance_passwds {
             close($next);
 
             unlink("$pwfile.old");
-            link( $pwfile, "$pwfile.old" ) or die $!;
-            move( $pwfile_next, $pwfile )  or die $!;
+            link( $pwfile, "$pwfile.old" )
+              or die "could not link( $pwfile, '$pwfile.old' ), $!";
+            move( $pwfile_next, $pwfile )
+              or die "could not move( $pwfile_next, $pwfile ), $!";
         }
     }
 
