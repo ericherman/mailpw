@@ -119,6 +119,9 @@ check-acceptance-mailpw: tests/expect-mailpw mailpw pwcrypt \
 	diff -u faux/foo/dovecot-passwd faux/foo/dovecot-passwd.expected
 	diff -u faux/bar/opensmtpd-users faux/bar/opensmtpd-users.expected
 	diff -u faux/bar/dovecot-passwd faux/bar/dovecot-passwd.expected
+	if [ ! -e faux/bar/reloaded ]; then false; fi
+	if [ -e faux/baz/reloaded ]; then false; fi
+	if [ ! -e faux/foo/reloaded ]; then false; fi
 	@echo Success, thus removing modified copies of user/passwd files
 	rm -rf faux
 	@echo "SUCCESS! ($@)"
