@@ -84,11 +84,11 @@ sub parse_mailpw_config {
             next;    # The "next" command is like "continue" in C
         }
 
-        my ( $instance, $type, $path, $user, $group, $mode ) =
-          split( /\s/, $line );
+        my ( $instance, $type, $path, $reload ) = split( /\s/, $line );
         die("bad line: '$line'\n") unless ( $instance && $type && $path );
 
-        $instances->{$instance}->{$path}->{type} = $type;
+        $instances->{$instance}->{$path}->{type}   = $type;
+        $instances->{$instance}->{$path}->{reload} = $reload;
     }
 
     return $instances;
@@ -169,6 +169,11 @@ sub change_instance_passwds {
               or die "could not link( $pwfile, '$pwfile.old' ), $!";
             move( $pwfile_next, $pwfile )
               or die "could not move( $pwfile_next, $pwfile ), $!";
+
+            my $reload = $instances->{$instance}->{$pwfile}->{reload};
+            if ($reload) {
+                ( system($reload) == 0 ) or die "system($reload) failed, $!";
+            }
         }
     }
 
