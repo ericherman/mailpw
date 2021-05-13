@@ -147,7 +147,8 @@ sub change_instance_passwds {
                 UNLINK => 0,
                 SUFFIX => ".conf"
             ) or die $!;
-            open my $orig, "<", $pwfile or die "could not open('<', $pwfile), $!";
+            open my $orig, "<", $pwfile
+              or die "could not open('<', $pwfile), $!";
 
             while ( my $line = <$orig> ) {
                 print $next replace_hash( $line, $user, $delim, $hash );
