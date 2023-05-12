@@ -70,7 +70,7 @@ sub who_am_i {
     return system_who_am_i();
 }
 
-# pass in a an open file handle to the mailpw.conf
+# pass in an open file handle to the mailpw.conf
 sub parse_mailpw_config {
     my ($fh) = @_;
 
